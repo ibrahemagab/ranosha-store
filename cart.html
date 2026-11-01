@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>السلة - Ranosha Store</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: #fff8f9;
+      transition: .3s
+    }
+
+    body.dark {
+      background: #121212 !important;
+      color: #fff !important
+    }
+
+    body.dark nav {
+      background: #1e1e1e !important
+    }
+
+    body.dark .bg-white {
+      background: #1e1e1e !important;
+      color: #fff !important;
+      border-color: #333 !important
+    }
+
+    body.dark input {
+      background: #2a2a2a !important;
+      color: #fff !important;
+      border-color: #444 !important
+    }
+
+    body.dark h1 {
+      color: #fff !important
+    }
+
+    body.dark h1 span {
+      color: #e8c4a8 !important
+    }
+
+    #user-name {
+      font-size: 11px;
+      color: #ec4899;
+      max-width: 70px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 800
+    }
+
+    .user-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+      white-space: nowrap
+    }
+
+    #admin-btn-area {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: nowrap;
+      white-space: nowrap
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav class="flex justify-between items-center px-4 py-3 bg-white sticky top-0 z-50 shadow-sm">
+    <a href="index.html" style="text-decoration:none;">
+      <h1 class="font-extrabold text-xl leading-none text-black">
+        RANOSHA<br><span class="text-[12px]">STORE 👑</span>
+      </h1>
+    </a>
+
+    <div class="flex items-center gap-2">
+      <div class="user-box">
+        <span id="user-name"></span>
+        <div id="admin-btn-area"></div>
+      </div>
+
+      <button onclick="toggleTheme()" id="theme-btn" class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-sm">
+        🌙
+      </button>
+
+      <div class="bg-black text-white text-xs px-4 py-2 rounded-full">
+        🛒 السلة (<span id="cart-count">0</span>)
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-[600px] mx-auto p-3">
+    <h2 class="font-extrabold text-center my-4">سلة المشتريات 🛒</h2>
+
+    <div id="cart-items"></div>
+
+    <div id="cart-summary" class="bg-white rounded-[18px] p-4 mt-4 shadow-sm hidden">
+
+      <div class="flex justify-between text-sm mb-2">
+        <span>عدد القطع:</span>
+        <span id="qty-count" class="font-bold"></span>
+      </div>
+
+      <div class="flex justify-between text-sm mb-2">
+        <span>المجموع:</span>
+        <span id="subtotal" class="font-bold"></span>
+      </div>
+
+      <div class="mt-3 border-t pt-3">
+        <p class="text-[12px] font-bold mb-2">🎟️ عندك كوبون خصم؟</p>
+
+        <div class="flex gap-2">
+          <input id="coupon-code" placeholder="اكتبي الكود RANOSHA10" class="flex-1 border rounded-full px-4 py-2.5 text-[12px] outline-none focus:border-pink-400">
+          <button onclick="applyCoupon()" id="coupon-btn" class="bg-black text-white px-5 py-2.5 rounded-full text-[12px] font-bold">
+            تطبيق
+          </button>
+        </div>
+
+        <div id="coupon-msg" class="text-[11px] mt-2 font-bold hidden"></div>
+
+        <div id="coupon-applied" class="hidden mt-2 bg-pink-50 border border-pink-200 rounded-xl p-2.5 flex justify-between items-center">
+          <div>
+            <span class="text-[11px] font-bold text-pink-600">كود <span id="applied-code-name"></span> مفعل ✅</span><br>
+            <span class="text-[10px] text-gray-500">خصم <span id="applied-discount-val"></span>%</span>
+          </div>
+          <button onclick="removeCoupon()" class="text-[11px] bg-red-500 text-white px-3 py-1 rounded-full">إلغاء</button>
+        </div>
+      </div>
+
+      <div id="discount-row" class="hidden flex justify-between text-sm mb-2 text-green-600 font-bold">
+        <span>الخصم:</span>
+        <span id="discount-amount"></span>
+      </div>
+
+      <div class="flex justify-between font-bold text-[16px] border-t pt-2 mt-2">
+        <span>الإجمالي بعد الخصم:</span>
+        <span id="total" class="text-pink-600"></span>
+      </div>
+
+      <div class="mt-4 border-t pt-4">
+        <input id="cust-name" placeholder="اسمك 💖" class="w-full border rounded-full px-4 py-2.5 text-sm mb-2 outline-none focus:border-pink-400">
+        <input id="cust-phone" placeholder="رقم التليفون 📞" class="w-full border rounded-full px-4 py-2.5 text-sm mb-2 outline-none focus:border-pink-400">
+        <input id="cust-address" placeholder="العنوان - المحافظة والمنطقة 📍" class="w-full border rounded-full px-4 py-2.5 text-sm mb-3 outline-none focus:border-pink-400">
+      </div>
+
+      <!-- ✅ زر الطلب بيسجل + يفتح واتساب -->
+      <a id="wa-order" target="_blank" onclick="handleOrder(event)" class="w-full bg-[#22c55e] text-white py-3.5 rounded-full font-bold text-center block mt-2 cursor-pointer" style="text-decoration:none;">
+        اطلبي الآن على واتساب 💬
+      </a>
+
+      <a href="track.html" class="w-full bg-pink-50 text-pink-600 py-2.5 rounded-full font-bold text-center block mt-2 text-[12px]" style="text-decoration:none;">
+        📦 تتبعي طلباتك السابقة
+      </a>
+
+      <div class="flex gap-2 mt-3">
+        <button onclick="clearCart()" class="flex-1 bg-pink-50 text-pink-600 py-2.5 rounded-full text-[12px] font-bold">مسح السلة 🗑️</button>
+        <a href="index.html" class="flex-1 bg-black text-white py-2.5 rounded-full text-[12px] font-bold text-center" style="text-decoration:none">كملي تسوق 🛍️</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, doc, getDoc, setDoc, serverTimestamp } from './firebase.js';
+
+    function getCurrentUser() {
+      try {
+        let u = JSON.parse(localStorage.getItem('ranosha-current-user') || 'null');
+        if (u) return u;
+        u = JSON.parse(localStorage.getItem('ranosha-admin-user') || 'null');
+        return u;
+      } catch {
+        return null
+      }
+    }
+
+    function getCartKey() {
+      const u = getCurrentUser();
+      if (u && u.email) return 'ranosha-cart-' + u.email.toLowerCase();
+      return 'ranosha-cart-guest';
+    }
+
+    function getCart() {
+      let key = getCartKey();
+      let cart = JSON.parse(localStorage.getItem(key) || '[]');
+      if (cart.length === 0) {
+        const old = JSON.parse(localStorage.getItem('ranosha-cart') || localStorage.getItem('cart') || '[]');
+        if (old.length > 0) cart = old;
+      }
+      return cart;
+    }
+
+    function saveCart(cart) {
+      localStorage.setItem(getCartKey(), JSON.stringify(cart));
+      localStorage.setItem('ranosha-cart', JSON.stringify(cart));
+      localStorage.setItem('cart', JSON.stringify(cart));
+    }
+
+    function isAdminCheck() {
+      const u = getCurrentUser();
+      return u && (u.role === 'admin' || u.isAdmin || localStorage.getItem('ranosha-admin') === 'true');
+    }
+
+    let cart = getCart();
+    let appliedCoupon = JSON.parse(localStorage.getItem('ranosha-applied-coupon') || 'null');
+    let discountAmount = 0;
+    let currentSubtotal = 0;
+    let currentFinalTotal = 0;
+    let currentTotalQty = 0;
+
+    window.toggleTheme = function() {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('ranosha-theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+      document.getElementById('theme-btn').innerText = document.body.classList.contains('dark') ? '☀️' : '🌙';
+    }
+
+    if (localStorage.getItem('ranosha-theme') === 'dark') {
+      document.body.classList.add('dark');
+      document.getElementById('theme-btn').innerText = '☀️';
+    }
+
+    function renderAdminBtn() {
+      const area = document.getElementById('admin-btn-area');
+      const nameEl = document.getElementById('user-name');
+      if (!area) return;
+      const u = getCurrentUser();
+      const admin = isAdminCheck();
+      if (u) {
+        if (admin) {
+          if (nameEl) {
+            nameEl.innerText = '';
+            nameEl.style.display = 'none';
+          }
+          area.innerHTML = `<a href="admin.html" style="text-decoration:none;"><div class="bg-gradient-to-r from-pink-500 to-pink-600 text-white text-[11px] px-3 py-1.5 rounded-full font-bold flex items-center gap-1.5 shadow border border-pink-400"><span class="w-[6px] h-[6px] bg-white rounded-full animate-pulse"></span>مسجلة 👑</div></a><span onclick="logout()" style="cursor:pointer;font-size:16px;margin-right:2px">🚪</span>`;
+        } else {
+          if (nameEl) {
+            nameEl.style.display = 'block';
+            nameEl.innerText = (u.name || u.email || '').split(' ')[0].split('@')[0];
+          }
+          area.innerHTML = `<div onclick="logout()" style="cursor:pointer" class="w-8 h-8 rounded-full bg-pink-500 text-white flex items-center justify-center text-[12px]">🚪</div>`;
+        }
+      } else {
+        if (nameEl) {
+          nameEl.innerText = '';
+          nameEl.style.display = 'none';
+        }
+        area.innerHTML = `<a href="login.html" style="text-decoration:none;"><div class="bg-gray-100 text-black text-[11px] px-3 py-1.5 rounded-full font-bold">دخول 👤</div></a>`;
+      }
+    }
+
+    window.logout = () => {
+      if (confirm('تسجلي خروج؟')) {
+        localStorage.removeItem('ranosha-current-user');
+        localStorage.removeItem('ranosha-admin-user');
+        localStorage.removeItem('ranosha-admin');
+        localStorage.removeItem('ranosha-cart');
+        localStorage.removeItem('cart');
+        localStorage.removeItem('ranosha-applied-coupon');
+        location.href = 'index.html';
+      }
+    };
+
+    renderAdminBtn();
+
+    window.applyCoupon = async function() {
+      const input = document.getElementById('coupon-code');
+      const msg = document.getElementById('coupon-msg');
+      const btn = document.getElementById('coupon-btn');
+      let code = input.value.trim().toUpperCase();
+      if (!code) {
+        msg.innerText = 'اكتبي الكود الأول';
+        msg.className = 'text-[11px] mt-2 font-bold text-red-500';
+        msg.classList.remove('hidden');
+        return;
+      }
+      btn.innerText = '...';
+      btn.disabled = true;
+      try {
+        const snap = await getDoc(doc(db, "RANOSHA_COUPONS", code));
+        if (!snap.exists()) {
+          msg.innerText = '❌ الكود غير صحيح';
+          msg.className = 'text-[11px] mt-2 font-bold text-red-500';
+          msg.classList.remove('hidden');
+          btn.innerText = 'تطبيق';
+          btn.disabled = false;
+          return;
+        }
+        const data = snap.data();
+        if (data.active === false) {
+          msg.innerText = '❌ الكود موقوف حاليا';
+          msg.className = 'text-[11px] mt-2 font-bold text-red-500';
+          msg.classList.remove('hidden');
+          btn.innerText = 'تطبيق';
+          btn.disabled = false;
+          return;
+        }
+        if (data.minAmount && cart.reduce((s, i) => s + i.price * i.qty, 0) < data.minAmount) {
+          msg.innerText = `❌ لازم طلبك يكون ${data.minAmount} جنيه على الأقل`;
+          msg.className = 'text-[11px] mt-2 font-bold text-red-500';
+          msg.classList.remove('hidden');
+          btn.innerText = 'تطبيق';
+          btn.disabled = false;
+          return;
+        }
+        appliedCoupon = {
+          code: code,
+          discount: data.discount || 10,
+          minAmount: data.minAmount || 0
+        };
+        localStorage.setItem('ranosha-applied-coupon', JSON.stringify(appliedCoupon));
+        msg.innerText = '✅ تم تفعيل الكوبون! خصم ' + appliedCoupon.discount + '%';
+        msg.className = 'text-[11px] mt-2 font-bold text-green-600';
+        msg.classList.remove('hidden');
+        document.getElementById('coupon-applied').classList.remove('hidden');
+        document.getElementById('applied-code-name').innerText = code;
+        document.getElementById('applied-discount-val').innerText = appliedCoupon.discount;
+        render();
+      } catch (e) {
+        msg.innerText = '❌ حصل خطأ جربي تاني';
+        msg.className = 'text-[11px] mt-2 font-bold text-red-500';
+        msg.classList.remove('hidden');
+      }
+      btn.innerText = 'تطبيق';
+      btn.disabled = false;
+    }
+
+    window.removeCoupon = function() {
+      appliedCoupon = null;
+      localStorage.removeItem('ranosha-applied-coupon');
+      document.getElementById('coupon-msg').classList.add('hidden');
+      document.getElementById('coupon-applied').classList.add('hidden');
+      document.getElementById('coupon-code').value = '';
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('cart-items');
+      document.getElementById('cart-count').innerText = cart.reduce((s, i) => s + i.qty, 0);
+
+      if (cart.length === 0) {
+        container.innerHTML = `<div class="bg-white rounded-[18px] p-10 text-center text-gray-400">السلة فاضية 🥺<br><a href="index.html" class="text-pink-500 font-bold">تسوقي الآن ✨</a></div>`;
+        document.getElementById('cart-summary').classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('cart-summary').classList.remove('hidden');
+      let subtotal = 0;
+      let totalQty = 0;
+
+      container.innerHTML = cart.map((p, i) => {
+        subtotal += p.price * p.qty;
+        totalQty += p.qty;
+        const img = p.image || p.img || (p.images ? p.images[0] : 'https://via.placeholder.com/150');
+        let priceLine = p.oldPrice && p.oldPrice > p.price ?
+          `<div class="text-[11px] font-bold mt-1 flex gap-1 items-center"><span class="text-pink-600">${p.price} ج</span><span class="line-through text-gray-400 text-[10px]">${p.oldPrice}</span><span class="bg-red-500 text-white text-[8px] px-1 rounded-full">-${p.discount||Math.round(((p.oldPrice-p.price)/p.oldPrice)*100)}%</span></div>` :
+          `<div class="text-[11px] text-pink-600 font-bold mt-1">${p.price} جنيه</div>`;
+        return `<div class="bg-white rounded-[18px] p-3 flex gap-3 items-center mb-3 shadow-sm"><img src="${img}" class="w-[70px] h-[70px] object-contain bg-[#fff8f9] rounded-xl"><div class="flex-1"><h4 class="text-[12px] font-bold line-clamp-1">${p.name}</h4>${priceLine}<div class="flex gap-2 mt-2 items-center"><button onclick="changeQty(${i},-1)" class="w-7 h-7 bg-gray-100 rounded-full font-bold">-</button><span class="text-[12px] font-bold w-5 text-center">${p.qty}</span><button onclick="changeQty(${i},1)" class="w-7 h-7 bg-black text-white rounded-full font-bold">+</button><span onclick="removeItem(${i})" class="text-[11px] text-red-400 mr-2 cursor-pointer bg-red-50 px-2 py-1 rounded-full">حذف</span></div></div></div>`;
+      }).join('');
+
+      if (appliedCoupon) {
+        discountAmount = Math.round(subtotal * appliedCoupon.discount / 100);
+        document.getElementById('discount-row').classList.remove('hidden');
+        document.getElementById('discount-amount').innerText = '- ' + discountAmount + ' جنيه';
+        document.getElementById('coupon-applied').classList.remove('hidden');
+        document.getElementById('applied-code-name').innerText = appliedCoupon.code;
+        document.getElementById('applied-discount-val').innerText = appliedCoupon.discount;
+        document.getElementById('coupon-code').value = appliedCoupon.code;
+      } else {
+        discountAmount = 0;
+        document.getElementById('discount-row').classList.add('hidden');
+        document.getElementById('coupon-applied').classList.add('hidden');
+      }
+
+      let finalTotal = subtotal - discountAmount;
+
+      // نحفظهم للطلب
+      currentSubtotal = subtotal;
+      currentFinalTotal = finalTotal;
+      currentTotalQty = totalQty;
+
+      document.getElementById('subtotal').innerText = subtotal + ' جنيه';
+      document.getElementById('total').innerText = finalTotal + ' جنيه';
+      document.getElementById('qty-count').innerText = totalQty + ' قطعة';
+
+      let name = document.getElementById('cust-name').value;
+      let phone = document.getElementById('cust-phone').value;
+      let address = document.getElementById('cust-address').value;
+
+      let msg = `طلب جديد من Ranosha Store 👑%0A%0A`;
+      if (name) msg += `👤 الاسم: ${name}%0A`;
+      if (phone) msg += `📞 تليفون: ${phone}%0A`;
+      if (address) msg += `📍 عنوان: ${address}%0A`;
+
+      const u = getCurrentUser();
+      if (u) msg += `📧 حساب: ${u.email}%0A`;
+
+      msg += `%0A📦 المنتجات:%0A`;
+      cart.forEach(p => msg += `- ${p.name} x${p.qty} = ${p.price * p.qty} جنيه%0A`);
+      msg += `%0A💰 المجموع: ${subtotal} جنيه%0A`;
+      if (appliedCoupon) msg += `🎟️ كوبون ${appliedCoupon.code}: خصم ${appliedCoupon.discount}% = -${discountAmount} جنيه%0A`;
+      msg += `✅ الإجمالي النهائي: ${finalTotal} جنيه (${totalQty} قطعة)`;
+      msg += `%0A%0A📦 تتبع طلبك: https://ranosha.store/track.html?phone=${phone}`;
+
+      document.getElementById('wa-order').href = `https://wa.me/201055045700?text=${msg}`;
+    }
+
+    ['cust-name','cust-phone','cust-address'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', render);
+    });
+
+    // ✅ دي الفانكشن الجديدة اللي بتسجل الطلب
+    window.handleOrder = async function(e) {
+      const name = document.getElementById('cust-name').value.trim();
+      const phone = document.getElementById('cust-phone').value.trim();
+      const address = document.getElementById('cust-address').value.trim();
+
+      if (!name || !phone || !address) {
+        e.preventDefault();
+        alert('اكتبي اسمك ورقمك وعنوانك الأول 💖');
+        return;
+      }
+
+      if (cart.length === 0) {
+        e.preventDefault();
+        alert('السلة فاضية 🥺');
+        return;
+      }
+
+      const orderId = 'ORD-' + Date.now();
+
+      try {
+        await setDoc(doc(db, "RANOSHA_ORDERS", orderId), {
+          id: orderId,
+          name: name,
+          phone: phone,
+          address: address,
+          email: getCurrentUser()?.email || '',
+          items: cart,
+          subtotal: currentSubtotal,
+          discount: discountAmount,
+          coupon: appliedCoupon ? appliedCoupon.code : '',
+          total: currentFinalTotal,
+          qty: currentTotalQty,
+          status: 'pending',
+          createdAt: serverTimestamp()
+        });
+
+        localStorage.setItem('ranosha-last-order', orderId);
+
+        // افتحي الواتساب بعد الحفظ
+        // الـ href متسجل قبل كده في render()
+      } catch(err) {
+        console.log('order save error', err);
+        // حتى لو فشل الحفظ، خليه يفتح واتساب
+      }
+    }
+
+    window.changeQty = function(i, d) {
+      cart[i].qty += d;
+      if (cart[i].qty <= 0) cart.splice(i, 1);
+      save();
+    }
+
+    window.removeItem = function(i) {
+      cart.splice(i, 1);
+      save();
+    }
+
+    window.clearCart = function() {
+      if (confirm('متأكدة عاوزة تمسحي السلة؟ 🥺')) {
+        cart = [];
+        appliedCoupon = null;
+        localStorage.removeItem('ranosha-applied-coupon');
+        save();
+      }
+    }
+
+    function save() {
+      saveCart(cart);
+      render();
+    }
+
+    if (appliedCoupon) {
+      document.getElementById('coupon-code').value = appliedCoupon.code;
+    }
+
+    render();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlCoupon = urlParams.get('coupon');
+    if (urlCoupon && !appliedCoupon) {
+      document.getElementById('coupon-code').value = urlCoupon;
+      applyCoupon();
+    }
+  </script>
+
+</body>
+
+</html>

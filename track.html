@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تتبع طلبك - Ranosha Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family:'Cairo', sans-serif; background:#fff8f9; transition:.3s }
+    body.dark { background:#121212 !important; color:#fff !important }
+    body.dark nav { background:#1e1e1e !important }
+    body.dark .bg-white { background:#1e1e1e !important; color:#fff !important; border-color:#333 !important }
+    body.dark input { background:#2a2a2a !important; color:#fff !important; border-color:#444 !important }
+    body.dark h1 { color:#fff !important }
+    body.dark h1 span { color:#e8c4a8 !important }
+    .status-dot { width:14px; height:14px; border-radius:50% }
+    .status-line { width:2px; flex:1 }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav class="flex justify-between items-center px-4 py-3 bg-white sticky top-0 z-50 shadow-sm">
+    <a href="index.html" style="text-decoration:none;">
+      <h1 class="font-extrabold text-xl leading-none text-black">
+        RANOSHA<br><span class="text-[12px]">STORE 👑</span>
+      </h1>
+    </a>
+    <div class="flex items-center gap-2">
+      <a href="index.html" class="bg-black text-white text-xs px-4 py-2 rounded-full" style="text-decoration:none;">رجوع للمتجر 🛍️</a>
+    </div>
+  </nav>
+
+  <div class="max-w-[500px] mx-auto p-4">
+
+    <h2 class="font-extrabold text-center text-[20px] mt-4">تتبعي طلبك 📦</h2>
+    <p class="text-center text-[12px] text-gray-400 mt-1">اكتبي رقم تليفونك أو رقم الطلب</p>
+
+    <!-- INPUT -->
+    <div class="bg-white rounded-[20px] p-4 mt-6 shadow-sm">
+      <input id="track-input" placeholder="رقم التليفون أو رقم الطلب 📞" class="w-full border rounded-full px-4 py-3 text-[13px] outline-none focus:border-pink-400">
+      <button onclick="trackOrder()" id="track-btn" class="w-full bg-black text-white py-3 rounded-full font-bold text-[13px] mt-3">
+        تتبع الآن 🔍
+      </button>
+      <p id="track-msg" class="text-[11px] mt-2 text-center font-bold hidden"></p>
+    </div>
+
+    <!-- RESULT -->
+    <div id="track-result" class="hidden mt-4"></div>
+
+  </div>
+
+  <script type="module">
+    import { db, collection, query, where, getDocs, doc, getDoc } from './firebase.js';
+
+    window.trackOrder = async function() {
+      const input = document.getElementById('track-input').value.trim();
+      const msg = document.getElementById('track-msg');
+      const result = document.getElementById('track-result');
+      const btn = document.getElementById('track-btn');
+
+      if (!input) {
+        msg.innerText = 'اكتبي رقم التليفون أو رقم الطلب الأول';
+        msg.className = 'text-[11px] mt-2 text-center font-bold text-red-500';
+        msg.classList.remove('hidden');
+        return;
+      }
+
+      btn.innerText = 'جاري البحث...';
+      btn.disabled = true;
+      msg.classList.add('hidden');
+      result.classList.add('hidden');
+
+      try {
+        let orders = [];
+
+        // جربي كـ ID أولا
+        try {
+          const snap = await getDoc(doc(db, "RANOSHA_ORDERS", input));
+          if (snap.exists()) orders.push({ id: snap.id, ...snap.data() });
+        } catch {}
+
+        // لو مالقاش، دوري برقم التليفون
+        if (orders.length === 0) {
+          const q1 = query(collection(db, "RANOSHA_ORDERS"), where("phone", "==", input));
+          const s1 = await getDocs(q1);
+          s1.forEach(d => orders.push({ id: d.id, ...d.data() }));
+
+          // جربي من غير 0 أو بـ +20
+          if (orders.length === 0) {
+            let cleanPhone = input.replace(/\D/g, '').slice(-10);
+            const q2 = query(collection(db, "RANOSHA_ORDERS"), where("phone", ">=", cleanPhone));
+            const s2 = await getDocs(q2);
+            s2.forEach(d => {
+              if (d.data().phone && d.data().phone.includes(cleanPhone)) {
+                orders.push({ id: d.id, ...d.data() });
+              }
+            });
+          }
+        }
+
+        if (orders.length === 0) {
+          msg.innerText = '❌ مفيش طلبات بالرقم ده، تأكدي من الرقم';
+          msg.className = 'text-[11px] mt-2 text-center font-bold text-red-500';
+          msg.classList.remove('hidden');
+          btn.innerText = 'تتبع الآن 🔍';
+          btn.disabled = false;
+          return;
+        }
+
+        // رتبي من الأحدث
+        orders.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+        result.classList.remove('hidden');
+        result.innerHTML = orders.map(order => renderOrderCard(order)).join('');
+
+      } catch(e) {
+        msg.innerText = '❌ حصل خطأ جربي تاني';
+        msg.className = 'text-[11px] mt-2 text-center font-bold text-red-500';
+        msg.classList.remove('hidden');
+        console.log(e);
+      }
+
+      btn.innerText = 'تتبع الآن 🔍';
+      btn.disabled = false;
+    }
+
+    function renderOrderCard(o) {
+      const statusMap = {
+        pending: { label: 'قيد المراجعة', color: '#f59e0b', step: 1 },
+        confirmed: { label: 'تم التأكيد', color: '#3b82f6', step: 2 },
+        shipped: { label: 'تم الشحن 🚚', color: '#8b5cf6', step: 3 },
+        delivered: { label: 'تم التوصيل ✅', color: '#22c55e', step: 4 },
+        cancelled: { label: 'ملغي', color: '#ef4444', step: 0 }
+      };
+
+      const current = statusMap[o.status] || statusMap.pending;
+      const isCancelled = o.status === 'cancelled';
+
+      let total = o.total || o.finalTotal || 0;
+
+      return `
+        <div class="bg-white rounded-[20px] p-4 shadow-sm mb-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-extrabold text-[13px]">طلب #${o.id.slice(0,6).toUpperCase()}</p>
+              <p class="text-[10px] text-gray-400 mt-1">📞 ${o.phone} - 👤 ${o.name || ''}</p>
+              <p class="text-[10px] text-gray-400">📅 ${o.createdAt ? new Date(o.createdAt.seconds*1000).toLocaleDateString('ar-EG') : ''}</p>
+            </div>
+            <div class="text-right">
+              <span class="px-3 py-1 rounded-full text-[11px] font-bold text-white" style="background:${current.color}">${current.label}</span>
+              <p class="text-[12px] font-bold text-pink-600 mt-2">${total} جنيه</p>
+            </div>
+          </div>
+
+          ${!isCancelled ? `
+          <div class="flex justify-between mt-6 px-2">
+            ${['pending','confirmed','shipped','delivered'].map((s,i) => {
+              const st = statusMap[s];
+              const done = current.step >= (i+1);
+              return `
+                <div class="flex flex-col items-center flex-1">
+                  <div class="status-dot" style="background:${done ? st.color : '#e5e7eb'}"></div>
+                  <p class="text-[9px] font-bold mt-1 text-center" style="color:${done ? st.color : '#9ca3af'}">${st.label}</p>
+                  ${i < 3 ? `<div class="status-line mt-1" style="background:${current.step > (i+1) ? st.color : '#e5e7eb'}; height:2px; width:100%"></div>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+          ` : ''}
+
+          <div class="border-t mt-4 pt-3">
+            <p class="text-[11px] font-bold mb-2">📦 المنتجات:</p>
+            ${(o.items || o.products || []).map(p => `
+              <div class="flex justify-between text-[11px] mb-1">
+                <span>${p.name} x${p.qty}</span>
+                <span class="font-bold">${p.price * p.qty} ج</span>
+              </div>
+            `).join('')}
+          </div>
+
+          ${o.address ? `<p class="text-[11px] text-gray-500 mt-2">📍 ${o.address}</p>` : ''}
+
+          <a href="https://wa.me/201055045700?text=استفسار عن طلب ${o.id}" target="_blank" class="w-full bg-[#22c55e] text-white py-2.5 rounded-full font-bold text-center block mt-4 text-[12px]" style="text-decoration:none;">
+            استفسار على واتساب 💬
+          </a>
+        </div>
+      `;
+    }
+
+    // لو جاي من لينك ?phone=...
+    const params = new URLSearchParams(window.location.search);
+    const phoneParam = params.get('phone') || params.get('id');
+    if (phoneParam) {
+      document.getElementById('track-input').value = phoneParam;
+      trackOrder();
+    }
+  </script>
+
+</body>
+</html>

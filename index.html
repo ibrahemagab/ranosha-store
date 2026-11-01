@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ranosha Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Cairo', sans-serif; background: #fff; transition: .3s }
+    body.dark { background: #121212 !important; color: #fff !important }
+    body.dark nav { background: #1e1e1e !important; border-bottom: 1px solid #333 }
+    body.dark .bg-white { background: #1e1e1e !important; color: #fff !important }
+    body.dark [class~="bg-[#fff8f9]"] { background: #2a2a2a !important }
+    body.dark .products { background: #121212 !important }
+    body.dark h1 { color: #fff !important }
+    body.dark h1 span { color: #e8c4a8 !important }
+    body.dark #searchInput, body.dark #priceRange { background: #1e1e1e !important; color: #fff !important; border: 1px solid #444 !important }
+    body.dark #searchInput::placeholder { color: #888 !important }
+    body.dark #priceRange option { background: #1e1e1e; color: #fff }
+    body.dark #section-title { color: #fff !important }
+    #product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+    @media(min-width:768px) { #product-grid { grid-template-columns: repeat(4, 1fr) } }
+    .no-scrollbar::-webkit-scrollbar { display: none }
+    .cat-section { overflow: visible !important; padding: 16px 0 !important }
+    .cat-scroll { overflow-x: auto; overflow-y: visible !important; padding: 12px 0 }
+    .cat-btn { transition: all .35s cubic-bezier(0.175, 0.885, 0.32, 1.275); will-change: transform }
+    .cat-btn .cat-circle { transition: all .35s; box-shadow: 0 6px 22px rgba(0,0,0,0.08), 0 0 12px rgba(236,72,153,.15); position: relative; overflow: hidden }
+    .cat-btn .cat-circle::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%; background: linear-gradient(180deg, rgba(255,255,255,.4), transparent); z-index: 2 }
+    .cat-btn:hover { transform: translateY(-6px) }
+    .cat-btn:hover .cat-circle { transform: scale(1.15); box-shadow: 0 12px 25px rgba(0,0,0,.15), 0 0 20px rgba(236,72,153,.35) !important; border-color: #ec4899 !important }
+    .cat-btn.active .cat-circle { transform: scale(1.12); background: #111 !important; border-color: #111 !important; box-shadow: 0 12px 30px rgba(0,0,0,0.25) !important }
+    @keyframes popIn { 0% { transform: scale(0) translateY(20px); opacity: 0 } 100% { transform: scale(1) translateY(0); opacity: 1 } }
+    .cat-btn { animation: popIn .5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards }
+    .glow-icon { box-shadow: 0 0 12px rgba(236,72,153,.35); border: 1px solid rgba(236,72,153,.25); animation: glowPulse 2.5s infinite }
+    @keyframes glowPulse { 0% { box-shadow: 0 0 8px rgba(236,72,153,.3) } 50% { box-shadow: 0 0 22px rgba(236,72,153,.65) } 100% { box-shadow: 0 0 8px rgba(236,72,153,.3) } }
+    .social-icons { display: flex; justify-content: center; gap: 18px; margin: 24px 0; align-items: center }
+    .social-btn { width: 58px; height: 58px; border-radius: 18px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: all .35s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 6px 18px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.35); position: relative; overflow: hidden; will-change: transform; animation: glowPulse 3s infinite }
+    .social-btn svg { display: block; fill: #fff; margin: auto; transition: all .35s ease }
+    .social-btn.fb { background: #1877F2 } .social-btn.messenger { background: linear-gradient(180deg, #2ec4ff 0%, #0084FF 100%) } .social-btn.insta { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%) }
+    .social-btn::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%; background: linear-gradient(180deg, rgba(255,255,255,.35), transparent); pointer-events: none }
+    .social-btn:hover { transform: translateY(-8px) scale(1.12) } .social-btn:hover svg { transform: scale(1.2) rotate(5deg) }
+    .popup-bg { background: rgba(0,0,0,.6); backdrop-filter: blur(8px) } .popup-card { animation: popupIn .4s cubic-bezier(0.175, 0.885, 0.32, 1.275) }
+    @keyframes popupIn { from { transform: scale(.8) translateY(20px); opacity: 0 } to { transform: scale(1) translateY(0); opacity: 1 } }
+    #user-name { font-size: 11px; color: #ec4899; max-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 800; cursor: pointer; background: #fff0f5; padding: 4px 10px; border-radius: 9999px; border: 1px solid #ffd1e0 }
+    #section-title { text-align: center; font-weight: 800; font-size: 17px; margin-bottom: 14px }
+  </style>
+</head>
+<body>
+
+  <nav class="flex justify-between items-center px-4 py-3 bg-white sticky top-0 z-50 shadow-sm">
+    <h1 class="font-extrabold text-xl leading-none">RANOSHA<br><span class="text-[12px] tracking-widest font-semibold">STORE 👑</span></h1>
+    <div class="flex items-center gap-2">
+      <div class="user-box flex items-center gap-2">
+        <span id="user-name" onclick="goToAccount()"></span>
+        <div id="admin-btn-area" class="flex items-center gap-2"></div>
+      </div>
+      <a href="wishlist.html" class="w-8 h-8 relative rounded-full bg-pink-100 flex items-center justify-center text-[14px] glow-icon relative" style="text-decoration:none;">❤️<span id="wish-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold hidden">0</span></a>
+      <button onclick="toggleTheme()" id="theme-btn" class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-sm">🌙</button>
+      <a href="cart.html" style="text-decoration:none;"><div class="bg-black text-white text-xs px-4 py-2 rounded-full">🛒 السلة (<span id="cart-count">0</span>)</div></a>
+    </div>
+  </nav>
+
+      <!-- SLIDER - 3 LOCAL IMAGES - FINAL FOR VSCODROID -->
+    
+    <!-- SLIDER SLIDE FIXED FOR RTL - VSCODROID -->
+    <section id="main-slider" dir="ltr" style="position:relative; width:100%; height:52vw; max-height:380px; overflow:hidden; border-radius:18px; margin:12px auto; background:#fff0f5;">
+        <div id="slider-track" dir="ltr" style="display:flex; width:300%; height:100%; transition:transform 0.6s cubic-bezier(.4,0,.2,1); will-change:transform;">
+            <div class="slide" style="width:33.333%; flex-shrink:0; height:100%;">
+                <img src="banner.jpg" style="width:100%;height:100%;object-fit:cover;display:block;" alt="banner1">
+            </div>
+            <div class="slide" style="width:33.333%; flex-shrink:0; height:100%;">
+                <img src="banner2.jpg" style="width:100%;height:100%;object-fit:cover;display:block;" alt="banner2">
+            </div>
+            <div class="slide" style="width:33.333%; flex-shrink:0; height:100%;">
+                <img src="banner3.jpg" style="width:100%;height:100%;object-fit:cover;display:block;" alt="banner3">
+            </div>
+        </div>
+        <button onclick="prevSlide()" style="position:absolute; top:50%; right:10px; transform:translateY(-50%); background:rgba(255,255,255,0.85); border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; z-index:10;">‹</button>
+        <button onclick="nextSlide()" style="position:absolute; top:50%; left:10px; transform:translateY(-50%); background:rgba(255,255,255,0.85); border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; z-index:10;">›</button>
+        <div style="position:absolute; bottom:10px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:10;">
+            <span class="dot active" style="width:22px; height:6px; border-radius:999px; background:#fff; display:block;"></span>
+            <span class="dot" style="width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.6); display:block;"></span>
+            <span class="dot" style="width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.6); display:block;"></span>
+        </div>
+    </section>
+    <script>
+    let currentSlide = 0;
+    const track = document.getElementById('slider-track');
+    const dots = document.querySelectorAll('#main-slider .dot');
+    function updateSlider(){
+        track.style.transform = 'translateX(-' + (currentSlide * 33.3333) + '%)';
+        dots.forEach((d,i)=>{ d.style.width = i===currentSlide ? '22px' : '6px'; d.style.background = i===currentSlide ? '#fff' : 'rgba(255,255,255,0.6)'; d.style.borderRadius = i===currentSlide ? '999px' : '50%'; });
+    }
+    function nextSlide(){ currentSlide = (currentSlide+1)%3; updateSlider(); }
+    function prevSlide(){ currentSlide = (currentSlide-1+3)%3; updateSlider(); }
+    setInterval(nextSlide, 3500);
+    updateSlider();
+    </script>
+
+
+
+  <section class="px-3 py-4 bg-white">
+    <div class="max-w-[600px] mx-auto flex gap-2">
+      <input id="searchInput" oninput="searchProducts()" placeholder="دوري على منتج..." class="flex-1 border rounded-full px-4 py-2.5 text-sm outline-none">
+      <select id="priceRange" onchange="filterByPrice()" class="border rounded-full px-3 py-2.5 text-[12px] outline-none">
+        <option value="all">كل الاسعار</option><option value="0-100">اقل من 100</option><option value="100-300">100-300</option><option value="300-600">300-600</option><option value="600-9999">اكثر من 600</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="bg-white py-2 cat-section">
+    <h3 style="font-weight:800; font-size:16px; margin:0 0 4px 0; text-align:center;">تسوقي حسب القسم ✨</h3>
+    <div class="flex gap-3 overflow-x-auto px-3 pb-2 no-scrollbar cat-scroll">
+      <button onclick="filterCat('all', this)" class="cat-btn active min-w-[82px] flex flex-col items-center gap-2 cursor-pointer shrink-0"><div class="cat-circle w-[82px] h-[82px] rounded-full bg-white border border-gray-100 flex items-center justify-center overflow-hidden"><img src="icons/all.webp" class="w-full h-full object-cover"></div><span class="text-[11px] font-bold">الكل</span></button>
+      <button onclick="filterCat('bundles', this)" class="cat-btn min-w-[82px] flex flex-col items-center gap-2 cursor-pointer shrink-0"><div class="cat-circle w-[82px] h-[82px] rounded-full bg-white border border-gray-100 flex items-center justify-center overflow-hidden"><img src="icons/bundles.webp" class="w-full h-full object-cover"></div><span class="text-[11px] font-bold">عروض</span></button>
+      <button onclick="filterCat('makeup', this)" class="cat-btn min-w-[82px] flex flex-col items-center gap-2 cursor-pointer shrink-0"><div class="cat-circle w-[82px] h-[82px] rounded-full bg-white border border-gray-100 flex items-center justify-center overflow-hidden"><img src="icons/makeup.webp" class="w-full h-full object-cover"></div><span class="text-[11px] font-bold">ميكب</span></button>
+      <button onclick="filterCat('skincare', this)" class="cat-btn min-w-[82px] flex flex-col items-center gap-2 cursor-pointer shrink-0"><div class="cat-circle w-[82px] h-[82px] rounded-full bg-white border border-gray-100 flex items-center justify-center overflow-hidden"><img src="icons/skincare.webp" class="w-full h-full object-cover"></div><span class="text-[11px] font-bold">بشرة</span></button>
+      <button onclick="filterCat('hair', this)" class="cat-btn min-w-[82px] flex flex-col items-center gap-2 cursor-pointer shrink-0"><div class="cat-circle w-[82px] h-[82px] rounded-full bg-white border border-gray-100 flex items-center justify-center overflow-hidden"><img src="icons/hair.webp" class="w-full h-full object-cover"></div><span class="text-[11px] font-bold">شعر</span></button>
+      <button onclick="filterCat('perfume', this)" class="cat-btn min-w-[82px] flex flex-col items-center gap-2 cursor-pointer shrink-0"><div class="cat-circle w-[82px] h-[82px] rounded-full bg-white border border-gray-100 flex items-center justify-center overflow-hidden"><img src="icons/perfume.webp" class="w-full h-full object-cover"></div><span class="text-[11px] font-bold">عطور</span></button>
+      <button onclick="filterCat('bags', this)" class="cat-btn min-w-[82px] flex flex-col items-center gap-2 cursor-pointer shrink-0"><div class="cat-circle w-[82px] h-[82px] rounded-full bg-white border border-gray-100 flex items-center justify-center overflow-hidden"><img src="icons/bags.webp" class="w-full h-full object-cover"></div><span class="text-[11px] font-bold">شنط</span></button>
+      <button onclick="filterCat('accessories', this)" class="cat-btn min-w-[82px] flex flex-col items-center gap-2 cursor-pointer shrink-0"><div class="cat-circle w-[82px] h-[82px] rounded-full bg-white border border-gray-100 flex items-center justify-center overflow-hidden"><img src="icons/accessories.webp" class="w-full h-full object-cover"></div><span class="text-[11px] font-bold">إكسسوارات</span></button>
+    </div>
+  </section>
+
+  <section class="products px-3 py-4 bg-[#fff8f9]"><h3 id="section-title">وصل حديثاً 🔥</h3><div id="product-grid">جاري تحميل المنتجات...</div></section>
+
+  <footer style="background:#111; color:#fff; padding:40px 18px 110px; text-align:center; margin-top:30px;">
+    <div style="max-width:1200px; margin:auto;">
+      <div style="font-size:40px;">👑</div>
+      <h2 style="color:#e8c4a8; letter-spacing:2px; margin:5px 0; font-weight:800; font-size:26px; line-height:1;">RANOSHA<br><span style="font-size:13px; letter-spacing:6px;">STORE</span></h2>
+      <p style="color:#e8a0bf; margin-top:10px; font-size:16px;">💍 كل جمالك في مكان واحد ✨</p>
+
+      <div style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:18px; padding:16px; margin:20px auto; max-width:400px;">
+        <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
+          <div><p style="color:#888; font-size:10px;">📞 رقم التواصل</p><p style="font-weight:800; font-size:13px; direction:ltr;">01055045700</p></div>
+          <div style="width:1px; background:#2a2a2a;"></div>
+          <div><p style="color:#888; font-size:10px;">⏰ أوقات العمل</p><p style="font-weight:800; font-size:13px;">يومياً 10ص - 10م</p></div>
+        </div>
+        <p style="color:#ec4899; font-size:10px; margin-top:10px;">🚚 شحن لجميع المحافظات</p>
+      </div>
+
+      <!-- ✅ زر تتبع الطلب في الفوتر -->
+      <a href="track.html" style="display:inline-flex; align-items:center; gap:8px; background:#fff; color:#111; padding:10px 22px; border-radius:30px; font-weight:800; font-size:13px; text-decoration:none; margin:10px auto 20px;">
+        📦 تتبع طلبك
+      </a>
+
+      <div class="social-icons">
+        <a href="https://www.facebook.com/share/1BqRmKP4Ys/" target="_blank" class="social-btn fb"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M14 8h2V4.5c-.5 0-2-.2-3.8-.2-3.7 0-6.2 2.3-6.2 6.4V13H3v3h3v7h4v-7h2.7l.4-3H10v-1.7c0-1 .3-2 2-2z"/></svg></a>
+        <a href="https://www.facebook.com/messages/t/61589862368993/" target="_blank" class="social-btn messenger"><svg viewBox="0 0 28 28" width="30" height="30"><path d="M14 0C6.27 0 0 4.9 0 10.95c0 3.45 1.7 6.52 4.36 8.52.2.15.26.41.11.63l-.97 2.12c-.15.33.2.65.52.46l2.55-1.47c.2-.11.43-.12.64-.04C8.31 21.5 10.1 21.9 14 21.9c7.73 0 14-4.9 14-10.95S21.73 0 14 0zm4.1 9.5l-3.5 5.3c-.4.6-1.1.8-1.7.4l-2.2-1.6c-.2-.1-.4-.1-.6.1L6.8 16c-.3.3-.8 0-.5-.4l3.5-5.3c.4-.6 1.1-.8 1.7-.4l2.2 1.6c.2.1.4.1.6-.1l3.3-2.3c.3-.2.7 0 .5.4z"/></svg></a>
+        <a href="https://www.instagram.com/ranosha_store" target="_blank" class="social-btn insta"><svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.3 2.2.5.3.2.6.4.9.7.3.3.5.6.7.9.2.4.4 1 .5 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.3 1.8-.5 2.2-.2.3-.4.6-.7.9-.3.3-.6.5-.9.7-.4.2-1 .4-2.2.5-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.3-2.2-.5-.3-.2-.6-.4-.9-.7-.3-.3-.5-.6-.7-.9-.2-.4-.4-1-.5-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.3-1.8.5-2.2.2-.3.4-.6.7-.9.3-.3.6-.5.9-.7.4-.2 1-.4 2.2-.5C8.4 2.2 8.8 2.2 12 2.2zm0 3.6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 9.9c-2.1 0-3.8-1.7-3.8-3.9s1.7-3.9 3.8-3.9 3.8 1.7 3.8 3.9-1.7 3.9-3.8 3.9zm5.1-10.5c-.8 0-1.4.6-1.4 1.4s.6 1.4 1.4-.6 1.4-1.4-.6-1.4-1.4-1.4z"/></svg></a>
+      </div>
+
+      <div style="border-top:1px solid #222; margin:25px 0;"></div>
+      <div style="margin-top:20px;">
+        <p style="color:#888; font-size:12px; font-weight:700;">جميع الحقوق محفوظة © 2025 Ranosha Store 👑</p>
+        <p style="color:#555; font-size:10px; margin-top:8px; line-height:1.6;">صُنع بكل حب 💖 لعشاق الجمال في مصر<br><span style="color:#ec4899;">Ranosha Store - كل جمالك في مكان واحد ✨</span></p>
+        <div style="display:flex; justify-content:center; gap:8px; margin-top:12px; font-size:10px; color:#444;"><span>🔒 دفع آمن</span><span style="color:#222;">|</span><span>🚚 شحن سريع</span><span style="color:#222;">|</span><span>💎 منتجات أصلية</span></div>
+      </div>
+    </div>
+  </footer>
+
+  <a href="https://wa.me/201055045700" target="_blank" style="position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#22c55e; color:#fff; padding:14px 24px; border-radius:30px; text-decoration:none; font-weight:800; z-index:9999; display:flex; align-items:center; gap:10px; font-size:14px; white-space:nowrap;">💬 تواصلي معنا عبر واتساب</a>
+  <div onclick="window.scrollTo({top:0, behavior:'smooth'})" style="position:fixed; bottom:18px; right:15px; background:#111; width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:9999; color:#fff; border:1px solid #333;">∧</div>
+
+  <div id="coupon-popup" class="fixed inset-0 popup-bg z-[9999] hidden items-center justify-center p-4">
+    <div class="popup-card bg-white rounded-[28px] p-6 w-full max-w-[350px] text-center relative shadow-2xl">
+      <button onclick="closeCouponPopup()" class="absolute top-3 left-3 w-8 h-8 bg-gray-100 rounded-full">✕</button>
+      <div class="text-[50px]">🎁</div><h3 class="font-extrabold text-[18px] text-black">هدية رنوشة ليكي 👑</h3>
+      <p class="text-[13px] text-gray-600 mt-2">كود <span class="text-pink-600 font-bold">10% خصم</span>!</p>
+      <div class="bg-[#fff8f9] border-2 border-dashed border-pink-300 rounded-xl p-3 mt-4"><p class="font-extrabold text-pink-600 text-[22px] tracking-widest">RANOSHA10</p></div>
+      <button onclick="copyCouponCode()" id="copy-btn" class="w-full bg-black text-white py-3 rounded-full font-bold mt-4">انسخي الكود ✨</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, collection, getDocs, doc, getDoc, setDoc, increment, serverTimestamp } from './firebase.js';
+    let allProducts = []; let filtered = []; let currentCat = 'all';
+    const titles = { all: 'وصل حديثاً 🔥', bundles: 'عروض رنوشة 💖', makeup: 'قسم الميكب 💄', skincare: 'العناية بالبشرة ✨', hair: 'العناية بالشعر 💇‍♀️', perfume: 'العطور 🌸', bags: 'الشنط 👜', accessories: 'الإكسسوارات 💍' };
+    function getCurrentUser() { try { let u = JSON.parse(localStorage.getItem('ranosha-current-user') || 'null'); if (u) return u; u = JSON.parse(localStorage.getItem('ranosha-admin-user') || 'null'); return u; } catch { return null; } }
+    function getCartKey() { const u = getCurrentUser(); return u?.email ? 'ranosha-cart-' + u.email.toLowerCase() : 'ranosha-cart-guest'; }
+    function getWishKey() { const u = getCurrentUser(); return u?.email ? 'ranosha-wish-' + u.email.toLowerCase() : 'ranosha-wish-guest'; }
+    function getCart() { const k = getCartKey(); let c = JSON.parse(localStorage.getItem(k) || '[]'); if (c.length === 0) { const old = JSON.parse(localStorage.getItem('ranosha-cart') || localStorage.getItem('cart') || '[]'); if (old.length > 0) return old; } return c; }
+    function saveCart(c) { localStorage.setItem(getCartKey(), JSON.stringify(c)); localStorage.setItem('ranosha-cart', JSON.stringify(c)); localStorage.setItem('cart', JSON.stringify(c)); }
+    function isAdminCheck() { const u = getCurrentUser(); return u && (u.role === 'admin' || u.isAdmin || localStorage.getItem('ranosha-admin') === 'true'); }
+    window.goToAccount = () => { location.href = 'login.html'; };
+    function renderAdminBtn() {
+      const area = document.getElementById('admin-btn-area'); const nameEl = document.getElementById('user-name'); const u = getCurrentUser(); const admin = isAdminCheck();
+      if (u) {
+        if (admin) {
+          if (nameEl) { nameEl.innerText = ''; nameEl.style.display = 'none'; }
+          area.innerHTML = `
+            <a href="admin.html" style="text-decoration:none;">
+              <div class="bg-gradient-to-r from-pink-500 to-pink-600 text-white text-[11px] px-3 py-1.5 rounded-full font-bold flex items-center gap-1.5">
+                <span class="w-[6px] h-[6px] bg-white rounded-full animate-pulse"></span>
+                مسجلة 👑
+              </div>
+            </a>
+            <span onclick="logout()" style="cursor:pointer;" class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-[14px]">🚪</span>
+          `;
+        } else {
+          if (nameEl) { nameEl.style.display = 'block'; nameEl.innerText = (u.name || u.email || '').split(' ')[0].split('@')[0] + ' 👤'; }
+          area.innerHTML = `<div onclick="logout()" style="cursor:pointer" class="w-8 h-8 rounded-full bg-pink-500 text-white flex items-center justify-center text-[13px]">🚪</div>`;
+        }
+      } else {
+        if (nameEl) { nameEl.innerText = ''; nameEl.style.display = 'none'; }
+        area.innerHTML = `<a href="login.html" class="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-[13px] glow-icon" style="text-decoration:none;">👤</a>`;
+      }
+    }
+    window.logout = () => { if (confirm('تسجلي خروج؟')) { localStorage.removeItem('ranosha-current-user'); localStorage.removeItem('ranosha-admin-user'); localStorage.removeItem('ranosha-admin'); localStorage.removeItem('ranosha-cart'); localStorage.removeItem('cart'); location.href = 'index.html'; } };
+    renderAdminBtn();
+    async function trackPageView() { const today = new Date().toISOString().split('T')[0]; if (sessionStorage.getItem('ranosha-viewed-' + today)) return; sessionStorage.setItem('ranosha-viewed-' + today, '1'); try { await setDoc(doc(db, "RANOSHA_STATS", today), { views: increment(1), date: today, lastUpdate: serverTimestamp() }, { merge: true }); } catch {} }
+    async function load() {
+      trackPageView();
+      try { const u = getCurrentUser(); if (u && u.email) { const snap = await getDoc(doc(db, "RANOSHA_WISHLIST", u.email.toLowerCase())); if (snap.exists()) { localStorage.setItem(getWishKey(), JSON.stringify(snap.data().items || [])); } } } catch {}
+      const snap = await getDocs(collection(db, "products")); allProducts = []; snap.forEach(d => allProducts.push({ fid: d.id, ...d.data() })); allProducts.sort((a, b) => (b.created || 0) - (a.created || 0)); filtered = [...allProducts]; render(); updateCart(); setTimeout(showCouponPopup, 1500);
+    }
+    function render() {
+      const grid = document.getElementById('product-grid'); if (filtered.length === 0) { grid.innerHTML = '<p class="col-span-2 text-center text-sm">مفيش منتجات</p>'; return; }
+      const wishList = JSON.parse(localStorage.getItem(getWishKey()) || '[]');
+      grid.innerHTML = filtered.map(p => {
+        let priceHtml = ''; if (p.oldPrice && p.oldPrice > p.price) { let disc = p.discount || Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100); priceHtml = `<div class="flex items-center gap-1 mt-2 justify-between"><span class="text-[13px] font-extrabold text-pink-600">${p.price} جنيه</span><div class="flex items-center gap-1"><span class="text-[10px] line-through text-gray-400">${p.oldPrice}</span><span class="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">-${disc}%</span></div></div>`; } else { priceHtml = `<span class="text-[13px] font-extrabold text-pink-600 mt-2 block">${p.price} جنيه</span>`; }
+        const isWish = wishList.includes(p.fid);
+        return `<div onclick="openProduct('${p.fid}')" class="bg-white rounded-[18px] p-2 shadow-sm cursor-pointer relative"><button onclick="event.stopPropagation(); toggleWish('${p.fid}')" class="absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center text-[14px] z-10 ${isWish ? 'bg-pink-500 text-white' : 'bg-white/80 text-gray-400 shadow'}">${isWish ? '❤️' : '🤍'}</button>${p.oldPrice && p.oldPrice > p.price ? `<span class="absolute top-2 right-2 bg-red-500 text-white text-[9px] px-2 py-1 rounded-full font-bold">خصم ${p.discount || Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100)}%</span>` : ''}<img src="${p.image}" class="w-full h-[140px] object-contain bg-[#fff8f9] rounded-[14px]"><p class="text-[12px] font-bold mt-2 h-[32px] overflow-hidden">${p.name}</p><div class="flex justify-between items-center mt-1">${priceHtml}<span class="text-[10px]">⭐ ${p.rating || 4.8}</span></div><button onclick="event.stopPropagation(); addToCart('${p.fid}')" class="w-full mt-2 bg-black text-white text-[11px] py-2 rounded-full">اضافة للسلة</button></div>`;
+      }).join('');
+    }
+    window.filterCat = (cat, el) => { currentCat = cat; document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active')); if (el) el.classList.add('active'); document.getElementById('section-title').innerText = titles[cat] || titles.all; if (cat === 'all') filtered = [...allProducts]; else filtered = allProducts.filter(p => p.category === cat); render(); };
+    window.searchProducts = () => { const q = document.getElementById('searchInput').value.toLowerCase(); filtered = allProducts.filter(p => p.name.toLowerCase().includes(q) && (currentCat === 'all' || p.category === currentCat)); const priceVal = document.getElementById('priceRange').value; if (priceVal !== 'all') { const [min, max] = priceVal.split('-').map(Number); filtered = filtered.filter(p => p.price >= min && p.price <= max); } render(); };
+    window.filterByPrice = () => { window.searchProducts(); };
+    window.openProduct = (id) => { localStorage.setItem('ranosha-current', id); location.href = 'product.html?id=' + id; };
+    window.addToCart = (fid) => { let cart = getCart(); const prod = allProducts.find(p => p.fid === fid); const exist = cart.find(c => c.fid === fid); if (exist) exist.qty++; else cart.push({ ...prod, qty: 1 }); saveCart(cart); updateCart(); alert('تمت الاضافة للسلة ✅'); };
+    window.toggleWish = async (fid) => { const key = getWishKey(); let w = JSON.parse(localStorage.getItem(key) || '[]'); if (w.includes(fid)) w = w.filter(id => id !== fid); else w.push(fid); localStorage.setItem(key, JSON.stringify(w)); render(); const u = getCurrentUser(); if (u && u.email) { try { await setDoc(doc(db, "RANOSHA_WISHLIST", u.email.toLowerCase()), { email: u.email.toLowerCase(), items: w, updatedAt: serverTimestamp() }, { merge: true }); } catch (e) { console.log("wish sync error", e); } } };
+    function updateCart() { const cart = getCart(); document.getElementById('cart-count').innerText = cart.reduce((s, i) => s + i.qty, 0); }
+    window.toggleTheme = () => { document.body.classList.toggle('dark'); localStorage.setItem('ranosha-theme', document.body.classList.contains('dark') ? 'dark' : 'light'); document.getElementById('theme-btn').innerText = document.body.classList.contains('dark') ? '☀️' : '🌙'; };
+    if (localStorage.getItem('ranosha-theme') === 'dark') { document.body.classList.add('dark'); document.getElementById('theme-btn').innerText = '☀️'; }
+    function showCouponPopup() { if (!localStorage.getItem('ranosha-popup-seen')) { const pop = document.getElementById('coupon-popup'); if (pop) { pop.classList.remove('hidden'); pop.classList.add('flex'); } } }
+    window.closeCouponPopup = () => { document.getElementById('coupon-popup').classList.add('hidden'); document.getElementById('coupon-popup').classList.remove('flex'); localStorage.setItem('ranosha-popup-seen','true'); };
+    window.copyCouponCode = () => { navigator.clipboard.writeText('RANOSHA10'); const btn = document.getElementById('copy-btn'); btn.innerText = '✅ تم النسخ'; setTimeout(() => { closeCouponPopup(); }, 800); };
+    load();
+  </script>
+</body>
+</html>

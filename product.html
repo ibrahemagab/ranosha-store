@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>تفاصيل المنتج - Ranosha Store</title>
+<script src="https://cdn.tailwindcss.com">
+    // Disable add button if out of stock
+    setTimeout(()=>{
+      const stock = (currentProduct.stock !== undefined && currentProduct.stock !== null) ? Number(currentProduct.stock) : 10;
+      const btn = document.getElementById('main-add-btn');
+      if(btn && stock <= 0){
+        btn.disabled = true;
+        btn.innerText = 'نفذت الكمية';
+        btn.classList.add('bg-gray-300','text-gray-500','cursor-not-allowed');
+        btn.classList.remove('bg-black','text-white');
+      }
+    }, 500);
+    
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&display=swap" rel="stylesheet">
+<style>
+html { color-scheme: light }
+body { font-family: 'Cairo', sans-serif; background: #fff8f9 !important; color: #111 !important; transition: .3s }
+nav { background: #fff !important }
+nav h1 { color: #111 !important }
+nav h1 span { color: #111 !important }
+.thumb { border: 2px solid transparent; cursor: pointer }
+.thumb.active { border-color: #ec4899 }
+.stars { color: #ffb400; font-size: 14px }
+#star-input span { font-size: 22px; cursor: pointer; color: #ffb400 }
+.review-card { background: #fff !important; border: 1px solid #f0f0f0; border-radius: 14px; padding: 10px 12px; margin-bottom: 8px }
+#related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+@media(min-width:768px) { #related-grid { grid-template-columns: repeat(4, 1fr) } }
+::selection { background: #ec4899 !important; color: white !important }
+* { -webkit-tap-highlight-color: transparent }
+body.dark { background: #121212 !important; color: #fff !important }
+body.dark nav { background: #1e1e1e !important; border-bottom: 1px solid #333 }
+body.dark nav h1, body.dark nav h1 span { color: #fff !important }
+body.dark .bg-white { background: #1e1e1e !important; border-color: #333 !important }
+body.dark .bg-white h2, body.dark .bg-white h3, body.dark .bg-white b { color: #fff !important }
+body.dark .review-card { background: #1e1e1e !important; border-color: #333 !important }
+body.dark .review-card b { color: #fff !important }
+body.dark .review-card p { color: #e0e0e0 !important }
+body.dark #reviews-list { color: #fff !important }
+body.dark input, body.dark textarea { background: #2a2a2a !important; color: #fff !important; border-color: #444 !important }
+/* ✅ FIX منتجات مشابهة - كانت مختفية في الدارك مود */
+body.dark #related-section h3 { color: #fff !important }
+body.dark #related-section .text-black { color: #fff !important }
+body.dark #related-section { background: transparent !important }
+body.dark #related-grid .bg-white { background: #1e1e1e !important; border: 1px solid #333 !important }
+body.dark #related-grid p { color: #fff !important }
+body.dark #related-grid .text-gray-400 { color: #999 !important }
+#user-name { font-size: 11px; color: #ec4899; max-width: 70px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 800 }
+.user-box { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; white-space: nowrap }
+#admin-btn-area { display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; white-space: nowrap }
+</style>
+</head>
+<body>
+<nav class="flex justify-between items-center px-4 py-3 bg-white sticky top-0 z-50 shadow-sm">
+<a href="index.html" style="text-decoration:none;">
+<h1 class="font-extrabold text-xl leading-none">RANOSHA<br><span class="text-[12px]">STORE 👑</span></h1>
+</a>
+<div class="flex items-center gap-2">
+<div class="user-box">
+<span id="user-name"></span>
+<div id="admin-btn-area"></div>
+</div>
+<button onclick="toggleTheme()" id="theme-btn" class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-sm">🌙</button>
+<a href="cart.html" style="text-decoration:none;">
+<div class="bg-black text-white text-xs px-4 py-2 rounded-full">
+🛒 السلة (<span id="cart-count">0</span>)
+</div>
+</a>
+</div>
+</nav>
+<div id="product-details" class="max-w-[600px] mx-auto p-3">جاري التحميل...</div>
+<div id="related-section" class="max-w-[600px] mx-auto p-3 hidden">
+<h3 class="font-extrabold text-[15px] mb-3 text-black">منتجات مشابهة ✨</h3>
+<div id="related-grid"></div>
+</div>
+<script type="module">
+import { db, doc, getDoc, collection, getDocs, addDoc, deleteDoc, query, where } from './firebase.js';
+let currentProduct = null;
+let currentRate = 5;
+function getCurrentUser() {
+try { let u = JSON.parse(localStorage.getItem('ranosha-current-user') || 'null'); if (u) return u; u = JSON.parse(localStorage.getItem('ranosha-admin-user') || 'null'); if (u) return u; return null; } catch { return null }
+}
+function getCartKey() {
+const u = getCurrentUser();
+if (u && u.email) return 'ranosha-cart-' + u.email.toLowerCase();
+return 'ranosha-cart-guest';
+}
+function getCart() {
+let key = getCartKey();
+let cart = JSON.parse(localStorage.getItem(key) || '[]');
+if (cart.length === 0) {
+const old = JSON.parse(localStorage.getItem('ranosha-cart') || localStorage.getItem('cart') || '[]');
+if (old.length > 0 && key !== 'ranosha-cart-guest') {
+localStorage.setItem(key, JSON.stringify(old));
+return old;
+} else if (old.length > 0 && key === 'ranosha-cart-guest' && !localStorage.getItem(key)) {
+return old;
+}
+}
+return cart;
+}
+function saveCart(cart) {
+localStorage.setItem(getCartKey(), JSON.stringify(cart));
+localStorage.setItem('ranosha-cart', JSON.stringify(cart));
+localStorage.setItem('cart', JSON.stringify(cart));
+}
+function isAdminCheck() {
+const u = getCurrentUser();
+return u && (u.role === 'admin' || u.isAdmin || localStorage.getItem('ranosha-admin') === 'true');
+}
+function renderAdminBtn() {
+const area = document.getElementById('admin-btn-area');
+const nameEl = document.getElementById('user-name');
+if (!area) return;
+const u = getCurrentUser();
+const admin = isAdminCheck();
+if (u) {
+if (admin) {
+if (nameEl) { nameEl.innerText = ''; nameEl.style.display = 'none'; }
+area.innerHTML = `
+<a href="admin.html" style="text-decoration:none;">
+<div class="bg-gradient-to-r from-pink-500 to-pink-600 text-white text-[11px] px-3 py-1.5 rounded-full font-bold flex items-center gap-1.5 shadow-[0_0_12px_rgba(236,72,153,0.5)] border border-pink-400">
+<span class="w-[6px] h-[6px] bg-white rounded-full animate-pulse"></span>مسجلة 👑
+</div>
+</a>
+<span onclick="logout()" style="cursor:pointer;font-size:16px;margin-right:2px" title="خروج">🚪</span>
+`;
+} else {
+if (nameEl) { nameEl.style.display = 'block'; nameEl.innerText = (u.name || u.email || '').split(' ')[0].split('@')[0]; }
+area.innerHTML = `<div onclick="logout()" style="cursor:pointer" class="w-8 h-8 rounded-full bg-pink-500 text-white flex items-center justify-center text-[13px]" title="خروج">🚪</div>`;
+}
+} else {
+if (nameEl) { nameEl.innerText = ''; nameEl.style.display = 'none'; }
+area.innerHTML = `<a href="login.html" style="text-decoration:none;"><div class="bg-gray-100 text-black text-[11px] px-3 py-1.5 rounded-full font-bold">دخول 👤</div></a>`;
+}
+}
+window.logout = () => {
+if (confirm('تسجلي خروج؟')) {
+localStorage.removeItem('ranosha-current-user');
+localStorage.removeItem('ranosha-admin-user');
+localStorage.removeItem('ranosha-admin');
+localStorage.removeItem('ranosha-cart');
+localStorage.removeItem('cart');
+location.href = 'index.html';
+}
+};
+renderAdminBtn();
+window.toggleTheme = () => {
+document.body.classList.toggle('dark');
+localStorage.setItem('ranosha-theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+document.getElementById('theme-btn').innerText = document.body.classList.contains('dark') ? '☀️' : '🌙';
+};
+if (localStorage.getItem('ranosha-theme') === 'dark') {
+document.body.classList.add('dark');
+document.getElementById('theme-btn').innerText = '☀️';
+}
+function updateCartCount() {
+const cart = getCart();
+document.getElementById('cart-count').innerText = cart.reduce((s, i) => s + (i.qty || 1), 0);
+}
+updateCartCount();
+const id = new URLSearchParams(window.location.search).get('id');
+const detailsDiv = document.getElementById('product-details');
+const isAdmin = isAdminCheck();
+async function loadProduct() {
+if (!id) return;
+const snap = await getDoc(doc(db, "products", id));
+if (!snap.exists()) { detailsDiv.innerHTML = 'المنتج مش موجود'; return; }
+currentProduct = { fid: snap.id, ...snap.data() };
+const imgs = currentProduct.images || [currentProduct.image];
+let priceBox = '';
+        let stockBadge = '';
+        let stock = (currentProduct.stock !== undefined && currentProduct.stock !== null) ? Number(currentProduct.stock) : 10;
+        let isOut = stock <= 0;
+        if(isOut){
+          stockBadge = `<div class="bg-gray-100 text-gray-600 text-[11px] font-bold px-3 py-1.5 rounded-full inline-block mb-2">نفذت الكمية 😔 غير متاح حالياً</div>`;
+        } else if(stock <= 5){
+          stockBadge = `<div class="bg-orange-50 text-orange-600 text-[11px] font-bold px-3 py-1.5 rounded-full inline-block mb-2">باقي ${stock} قطع بس! 🔥</div>`;
+        } else {
+          stockBadge = `<div class="bg-green-50 text-green-600 text-[11px] font-bold px-3 py-1.5 rounded-full inline-block mb-2">متوفر ✅ - ${stock} قطعة</div>`;
+        }
+        
+if (currentProduct.oldPrice && currentProduct.oldPrice > currentProduct.price) {
+let disc = currentProduct.discount || Math.round(((currentProduct.oldPrice - currentProduct.price) / currentProduct.oldPrice) * 100);
+priceBox = `
+<div class="mt-2 flex flex-col items-center gap-1">
+<div class="flex items-center gap-2">
+<span class="text-pink-600 font-extrabold text-[22px]">${currentProduct.price} جنيه</span>
+<span class="text-[13px] line-through text-gray-400">${currentProduct.oldPrice} جنيه</span>
+<span class="text-[11px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold">خصم -${disc}%</span>
+</div>
+</div>
+`;
+} else {
+priceBox = `<div class="text-pink-600 font-extrabold text-[22px] mt-2">${currentProduct.price} جنيه</div>`;
+}
+detailsDiv.innerHTML = `
+<div class="bg-white rounded-[22px] p-4 shadow-sm" style="background:#fff!important">
+<img id="main-img" src="${imgs[0]}" class="w-full h-[380px] object-contain bg-[#fff8f9] rounded-[18px]">
+<div class="flex gap-2 mt-3 overflow-x-auto justify-center">
+${imgs.map((im, i) => `<img onclick="setMain('${im}',this)" src="${im}" class="thumb w-[58px] h-[58px] object-cover rounded-xl bg-[#fff8f9] ${i == 0 ? 'active' : ''}">`).join('')}
+</div>
+<div class="text-center mt-4">
+<h2 style="color:#111!important;font-weight:800;font-size:18px">${currentProduct.name}</h2>
+<p class="text-gray-500 text-[11px] mt-1" style="color:#6b7280!important">${currentProduct.category || ''}</p>
+${stockBadge}${priceBox}
+<p style="color:#4b5563!important;background:#fff8f9!important" class="text-[13px] leading-7 mt-4 bg-[#fff8f9] p-3 rounded-xl">${currentProduct.desc || ''}</p>
+<button onclick="addToCart()" id="main-add-btn" class="w-full bg-black text-white py-3.5 rounded-full font-bold text-[14px] mt-6">أضيفي للسلة 🛒</button>
+</div>
+</div>
+<div class="bg-white rounded-[22px] p-4 shadow-sm mt-4" style="background:#fff!important">
+<div class="flex justify-between items-center">
+<h3 style="color:#111!important;font-weight:800;font-size:14px">تقييمات العملاء ⭐</h3>
+<span class="text-[12px]" style="color:#111!important"><span id="avg-rate">-</span> / 5 (<span id="rate-count">0</span>)</span>
+</div>
+<div id="reviews-list" class="mt-3">جاري تحميل التقييمات...</div>
+<div class="mt-4 border-t pt-3">
+<p style="color:#111!important" class="text-[12px] font-bold mb-2">ضيفي رأيك 💖</p>
+<div class="flex gap-1 mb-2" id="star-input"><span onclick="setRate(1)">☆</span><span onclick="setRate(2)">☆</span><span onclick="setRate(3)">☆</span><span onclick="setRate(4)">☆</span><span onclick="setRate(5)">☆</span></div>
+<input id="rev-name" placeholder="اسمك (لو مش مسجلة اكتبي اسمك هنا)" class="w-full border rounded-full px-4 py-2.5 text-[12px] mb-2 outline-none focus:border-pink-300">
+<textarea id="rev-text" placeholder="رأيك..." class="w-full border rounded-xl px-4 py-2.5 text-[12px] outline-none h-[70px]"></textarea>
+<button onclick="addReview()" id="rev-btn" class="w-full bg-black text-white py-2.5 rounded-full text-[12px] font-bold mt-2">نشر التقييم ✨</button>
+</div>
+</div>
+`;
+setRate(5);
+loadReviews();
+loadRelated(currentProduct.category, currentProduct.fid);
+autoFillReviewName();
+}
+
+  function autoFillReviewName(){
+    try{
+      const u = getCurrentUser();
+      const nameInput = document.getElementById('rev-name');
+      if(!nameInput) return;
+      if(u && u.name){
+        nameInput.value = u.name;
+        nameInput.readOnly = true;
+        nameInput.classList.add('bg-pink-50', 'border-pink-200', 'text-pink-600', 'font-bold');
+        nameInput.placeholder = '';
+        // Add small label if not exists
+        if(!document.getElementById('name-hint')){
+          const hint = document.createElement('p');
+          hint.id = 'name-hint';
+          hint.className = 'text-[10px] text-green-600 font-bold mt-1 mr-1';
+          hint.innerText = '✅ مسجلة باسمك (' + u.name + ')';
+          nameInput.parentNode.insertBefore(hint, nameInput.nextSibling);
+        }
+      } else {
+        nameInput.value = '';
+        nameInput.readOnly = false;
+        nameInput.classList.remove('bg-pink-50', 'border-pink-200', 'text-pink-600', 'font-bold');
+        const hint = document.getElementById('name-hint');
+        if(hint) hint.remove();
+      }
+    }catch(e){ console.log('autoFill error', e); }
+  }
+window.setMain = (src, el) => {
+document.getElementById('main-img').src = src;
+document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+if (el) el.classList.add('active');
+};
+window.addToCart = () => {
+let cart = getCart();
+let ex = cart.find(i => i.fid == currentProduct.fid);
+if (ex) ex.qty++;
+else cart.push({ ...currentProduct, qty: 1 });
+saveCart(cart);
+updateCartCount();
+alert('تمت الاضافة 🛒');
+location.href = 'cart.html';
+};
+window.setRate = (n) => {
+currentRate = n;
+document.querySelectorAll('#star-input span').forEach((s, i) => s.innerText = i < n ? '★' : '☆');
+};
+async function loadReviews() {
+const q = query(collection(db, "reviews"), where("productId", "==", id));
+const snap = await getDocs(q);
+let reviews = [];
+snap.forEach(d => reviews.push({ rid: d.id, ...d.data() }));
+reviews.sort((a, b) => b.created - a.created);
+const list = document.getElementById('reviews-list');
+document.getElementById('rate-count').innerText = reviews.length;
+if (reviews.length == 0) {
+document.getElementById('avg-rate').innerText = '-';
+list.innerHTML = '<div class="text-center text-[11px] text-gray-400 py-4">لسه مفيش تقييمات 💖 كوني اول واحدة تقيّم ✨</div>';
+return;
+}
+let avg = (reviews.reduce((s, r) => s + r.rate, 0) / reviews.length).toFixed(1);
+document.getElementById('avg-rate').innerText = avg;
+list.innerHTML = reviews.map(r => `
+<div class="review-card">
+<div class="flex justify-between items-start">
+<b class="text-[12px]">${r.name}</b>
+<div class="flex items-center gap-2">
+<span class="stars">${'★'.repeat(r.rate)}${'☆'.repeat(5 - r.rate)}</span>
+${isAdmin ? `<button onclick="delReview('${r.rid}')" class="text-[10px] bg-red-50 text-red-500 px-2 py-1 rounded-full">حذف</button>` : ''}
+</div>
+</div>
+<p class="text-[11px] mt-1">${r.text}</p>
+<span class="text-[10px] text-gray-400">${r.date || ''}</span>
+</div>
+`).join('');
+}
+window.addReview = async () => {
+let nameInput = document.getElementById('rev-name');
+let name = nameInput ? nameInput.value.trim() : '';
+if(!name){
+  name = getCurrentUser()?.name || 'عميلة رنوشة';
+}
+if(nameInput && !nameInput.value.trim() && getCurrentUser()?.name){
+  name = getCurrentUser().name;
+}
+let text = document.getElementById('rev-text').value;
+if (!text) return alert('اكتبي رأيك');
+let btn = document.getElementById('rev-btn');
+btn.innerText = 'جاري النشر...';
+btn.disabled = true;
+await addDoc(collection(db, "reviews"), { productId: id, name, text, rate: currentRate, date: new Date().toLocaleDateString('ar-EG'), created: Date.now() });
+document.getElementById('rev-text').value = '';
+btn.innerText = 'نشر التقييم ✨';
+btn.disabled = false;
+loadReviews();
+};
+window.delReview = async (rid) => {
+if (!confirm('متأكدة تمسحي التقييم ده؟ 🗑️')) return;
+await deleteDoc(doc(db, "reviews", rid));
+loadReviews();
+};
+async function loadRelated(category, currentId) {
+const snap = await getDocs(collection(db, "products"));
+let related = [];
+snap.forEach(d => {
+const prod = { fid: d.id, ...d.data() };
+if (prod.category == category && prod.fid != currentId) related.push(prod);
+});
+if (related.length < 4) {
+snap.forEach(d => {
+const prod = { fid: d.id, ...d.data() };
+if (prod.fid != currentId && !related.find(r => r.fid == prod.fid)) related.push(prod);
+});
+}
+related = related.slice(0, 4);
+if (related.length == 0) return;
+document.getElementById('related-section').classList.remove('hidden');
+document.getElementById('related-grid').innerHTML = related.map(p => {
+let pr = p.oldPrice && p.oldPrice > p.price ? `<span class="text-[11px] font-bold text-pink-600">${p.price} ج</span><span class="text-[9px] line-through text-gray-400">${p.oldPrice}</span>` : `<span class="text-[12px] font-extrabold text-pink-600">${p.price} جنيه</span>`;
+return `
+<div onclick="location.href='product.html?id=${p.fid}'" class="bg-white rounded-[18px] p-2 shadow-sm cursor-pointer">
+<img src="${p.image}" class="w-full h-[120px] object-contain bg-[#fff8f9] rounded-[14px]">
+<p class="text-[11px] font-bold mt-2 h-[28px] overflow-hidden">${p.name}</p>
+<div class="flex justify-between items-center mt-1">
+<div class="flex gap-1 items-center">${pr}</div>
+<span class="text-[10px]">⭐ ${p.rating || '-'}</span>
+</div>
+</div>
+`}).join('');
+}
+loadProduct();
+
+    // Disable add button if out of stock
+    setTimeout(()=>{
+      const stock = (currentProduct.stock !== undefined && currentProduct.stock !== null) ? Number(currentProduct.stock) : 10;
+      const btn = document.getElementById('main-add-btn');
+      if(btn && stock <= 0){
+        btn.disabled = true;
+        btn.innerText = 'نفذت الكمية';
+        btn.classList.add('bg-gray-300','text-gray-500','cursor-not-allowed');
+        btn.classList.remove('bg-black','text-white');
+      }
+    }, 500);
+    
+</script>
+</body>
+</html>

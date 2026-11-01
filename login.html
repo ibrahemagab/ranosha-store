@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول - Ranosha</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>body{font-family:'Cairo',sans-serif;background:#fff8f9}</style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <nav class="flex justify-between items-center px-4 py-3 bg-white shadow-sm">
+    <h1 class="font-extrabold text-[18px]">Ranosha<span class="text-pink-500">.</span></h1>
+    <a href="index.html" class="text-[11px] bg-pink-100 px-3 py-1.5 rounded-full font-bold" style="text-decoration:none;">رجوع للمتجر</a>
+  </nav>
+  <div class="flex-1 flex items-center justify-center p-4">
+    <div class="bg-white rounded-[28px] p-6 w-full max-w-[400px] shadow-[0_10px_40px_rgba(0,0,0,0.06)] text-center border border-pink-50">
+
+      <!-- لوجو -->
+      <div id="logo-area">
+        <div class="w-[70px] h-[70px] bg-black rounded-full flex items-center justify-center mx-auto text-[30px]">👑</div>
+        <h2 class="font-extrabold text-[20px] mt-4">أهلاً بيكي ✨</h2>
+        <p class="text-[12px] text-gray-400 mt-1">ادخلي بحسابك أو اعملي حساب جديد</p>
+      </div>
+
+      <!-- Tabs -->
+      <div id="tabs" class="flex gap-2 mt-5 bg-[#fff8f9] p-1 rounded-full">
+        <button id="tab-login" onclick="switchTab('login')" class="flex-1 bg-black text-white py-2.5 rounded-full text-[12px] font-bold">دخول</button>
+        <button id="tab-register" onclick="switchTab('register')" class="flex-1 text-gray-500 py-2.5 rounded-full text-[12px] font-bold">حساب جديد</button>
+        <button id="tab-admin" onclick="switchTab('admin')" class="flex-1 text-gray-500 py-2.5 rounded-full text-[12px] font-bold">ادمن 🔒</button>
+      </div>
+
+      <!-- Login / Register Form -->
+      <div id="user-form" class="mt-6">
+        <div id="name-field" class="text-right hidden">
+          <label class="text-[11px] font-bold mr-2">الاسم</label>
+          <input id="name" placeholder="اسمك" class="w-full border border-pink-100 rounded-full px-4 py-3 text-sm mt-1 outline-none focus:border-pink-300 bg-[#fff8f9]">
+        </div>
+        <div class="text-right mt-3">
+          <label class="text-[11px] font-bold mr-2">الإيميل</label>
+          <input id="email" type="email" placeholder="your@email.com" class="w-full border border-pink-100 rounded-full px-4 py-3 text-sm mt-1 outline-none focus:border-pink-300 bg-[#fff8f9]">
+        </div>
+        <div class="mt-3 text-right">
+          <label class="text-[11px] font-bold mr-2">كلمة السر</label>
+          <input id="pass" type="password" placeholder="••••••••" class="w-full border border-pink-100 rounded-full px-4 py-3 text-sm mt-1 outline-none focus:border-pink-300 bg-[#fff8f9]">
+        </div>
+        <button id="userBtn" onclick="handleUser()" class="w-full bg-black text-white py-3.5 rounded-full font-bold mt-6 text-sm">دخول 🚀</button>
+      </div>
+
+      <!-- Admin Form -->
+      <div id="admin-form" class="mt-6 hidden">
+        <div class="text-right">
+          <label class="text-[11px] font-bold mr-2">إيميل الادمن</label>
+          <input id="admin-email" type="email" placeholder="admin@ranosha.com" class="w-full border border-pink-100 rounded-full px-4 py-3 text-sm mt-1 outline-none focus:border-pink-300 bg-[#fff8f9]">
+        </div>
+        <div class="mt-3 text-right">
+          <label class="text-[11px] font-bold mr-2">باسورد الادمن</label>
+          <input id="admin-pass" type="password" placeholder="••••••••" class="w-full border border-pink-100 rounded-full px-4 py-3 text-sm mt-1 outline-none focus:border-pink-300 bg-[#fff8f9]">
+        </div>
+        <button id="adminBtn" class="w-full bg-black text-white py-3.5 rounded-full font-bold mt-6 text-sm">دخول للوحة التحكم 🚀</button>
+      </div>
+
+      <!-- Logged Section -->
+      <div id="logged-section" class="hidden">
+        <div class="w-[70px] h-[70px] bg-pink-100 rounded-full flex items-center justify-center mx-auto text-[30px]">👤</div>
+        <h3 id="logged-name" class="font-extrabold text-[18px] mt-4"></h3>
+        <p id="logged-email" class="text-[12px] text-gray-500 mt-1"></p>
+        <div class="mt-6">
+          <a href="index.html" class="w-full bg-black text-white py-3.5 rounded-full font-bold text-sm block" style="text-decoration:none;">الذهاب للمتجر 🛍️</a>
+          <button onclick="logoutUser()" class="w-full bg-gray-100 py-3.5 rounded-full font-bold mt-2 text-sm">تسجيل خروج 🚪</button>
+          <div class="border-t mt-6 pt-4">
+            <button onclick="openDeleteModal()" class="text-[12px] text-red-500 bg-red-50 px-5 py-2.5 rounded-full font-bold">حذف حسابي نهائياً 🗑️</button>
+            <p class="text-[10px] text-gray-400 mt-2 leading-5">لو حذفتي حسابك كل بياناتك والسلة هتتمسح ومش هتقدري ترجعيها تاني</p>
+          </div>
+        </div>
+      </div>
+
+      <p id="msg" class="text-[11px] text-white bg-red-500 rounded-full py-2 mt-3 hidden"></p>
+      <p id="success" class="text-[11px] text-white bg-green-500 rounded-full py-2 mt-3 hidden"></p>
+    </div>
+  </div>
+
+  <!-- Modal حذف الحساب -->
+  <div id="deleteModal" class="fixed inset-0 bg-black/60 z-[9999] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-[22px] p-6 w-full max-w-[360px] text-center">
+      <div class="text-[40px]">⚠️</div>
+      <h3 class="font-extrabold text-[16px] mt-2">تأكيد حذف الحساب</h3>
+      <p class="text-[13px] text-gray-600 mt-3 leading-6">هل انتي متأكدة؟ الحساب هيتمسح نهائي من المتجر ومش هتقدري ترجعيه</p>
+      <div class="bg-[#fff8f9] p-3 rounded-xl mt-4">
+        <p id="del-email-show" class="font-bold text-[12px] text-pink-600"></p>
+      </div>
+      <input id="del-pass" type="password" placeholder="اكتبي باسوردك للتأكيد" class="w-full border rounded-xl px-4 py-2.5 text-sm mt-3 outline-none focus:border-red-400">
+      <div class="flex gap-2 mt-5">
+        <button onclick="closeDeleteModal()" class="flex-1 bg-gray-100 py-3 rounded-full font-bold text-[13px]">إلغاء</button>
+        <button id="confirmDelBtn" class="flex-1 bg-red-500 text-white py-3 rounded-full font-bold text-[13px]">ايوه امسحيه 🗑️</button>
+      </div>
+      <p id="del-msg" class="text-[11px] mt-3 font-bold"></p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, auth, collection, addDoc, getDocs, query, where, signInWithEmailAndPassword, onAuthStateChanged, doc, deleteDoc } from './firebase.js';
+
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('pass');
+    const nameEl = document.getElementById('name');
+    const msg = document.getElementById('msg');
+    const success = document.getElementById('success');
+    const userBtn = document.getElementById('userBtn');
+    const adminEmailEl = document.getElementById('admin-email');
+    const adminPassEl = document.getElementById('admin-pass');
+    const adminBtn = document.getElementById('adminBtn');
+    let currentTab = 'login';
+    let currentUserData = null;
+    let currentUserId = null;
+
+    // شوفي لو فيه يوزر عادي مسجل دخول قبل كده
+    function checkLoggedUser() {
+      const saved = JSON.parse(localStorage.getItem('ranosha-current-user') || 'null');
+      if (saved && saved.role !== 'admin' && saved.email) {
+        showLoggedState(saved);
+        // حاولي تجيبي الـ ID من Firebase
+        findUserId(saved.email, saved.password);
+      }
+    }
+    checkLoggedUser();
+
+    onAuthStateChanged(auth, (user)=>{
+      if(user && localStorage.getItem('ranosha-admin')==='true'){
+        window.location.href='admin.html';
+      }
+    });
+
+    async function findUserId(email, password) {
+      try {
+        const q = query(collection(db,"RANOSHA_USERS"), where("email","==",email));
+        const snap = await getDocs(q);
+        snap.forEach(d => {
+          if (d.data().password === password || !password) {
+            currentUserId = d.id;
+            currentUserData = d.data();
+          }
+        });
+      } catch {}
+    }
+
+    function showLoggedState(u) {
+      document.getElementById('user-form').classList.add('hidden');
+      document.getElementById('admin-form').classList.add('hidden');
+      document.getElementById('tabs').classList.add('hidden');
+      document.getElementById('logo-area').classList.add('hidden');
+      document.getElementById('logged-section').classList.remove('hidden');
+      document.getElementById('logged-name').innerText = u.name || u.email.split('@')[0];
+      document.getElementById('logged-email').innerText = u.email;
+      document.getElementById('del-email-show').innerText = u.email;
+      currentUserData = u;
+    }
+
+    window.switchTab=(tab)=>{
+      currentTab=tab;
+      document.getElementById('tab-login').className = tab==='login' ? 'flex-1 bg-black text-white py-2.5 rounded-full text-[12px] font-bold' : 'flex-1 text-gray-500 py-2.5 rounded-full text-[12px] font-bold';
+      document.getElementById('tab-register').className = tab==='register' ? 'flex-1 bg-black text-white py-2.5 rounded-full text-[12px] font-bold' : 'flex-1 text-gray-500 py-2.5 rounded-full text-[12px] font-bold';
+      document.getElementById('tab-admin').className = tab==='admin' ? 'flex-1 bg-black text-white py-2.5 rounded-full text-[12px] font-bold' : 'flex-1 text-gray-500 py-2.5 rounded-full text-[12px] font-bold';
+      if(tab==='admin'){
+        document.getElementById('user-form').classList.add('hidden');
+        document.getElementById('admin-form').classList.remove('hidden');
+      }else{
+        document.getElementById('admin-form').classList.add('hidden');
+        document.getElementById('user-form').classList.remove('hidden');
+        if(tab==='register'){
+          document.getElementById('name-field').classList.remove('hidden');
+          userBtn.innerText='إنشاء حساب ✨';
+        }else{
+          document.getElementById('name-field').classList.add('hidden');
+          userBtn.innerText='دخول 🚀';
+        }
+      }
+    }
+
+    window.handleUser=async()=>{
+      const email = emailEl.value.trim();
+      const pass = passEl.value.trim();
+      const name = nameEl.value.trim();
+      if(!email || !pass){ showMsg('اكتبي الإيميل والباسورد'); return; }
+      if(currentTab==='register' && !name){ showMsg('اكتبي اسمك'); return; }
+      userBtn.innerText='جاري...'; userBtn.disabled=true;
+      try{
+        if(currentTab==='register'){
+          const q = query(collection(db,"RANOSHA_USERS"), where("email","==",email));
+          const snap = await getDocs(q);
+          if(!snap.empty){ showMsg('الإيميل ده متسجل قبل كده'); resetBtn(); return; }
+          const docRef = await addDoc(collection(db,"RANOSHA_USERS"),{ name, email, password: pass, role:'user', created: Date.now(), createdDate: new Date().toISOString() });
+          currentUserId = docRef.id;
+          const u = {name,email,password:pass,role:'user'};
+          localStorage.setItem('ranosha-current-user', JSON.stringify(u));
+          showSuccess('تم إنشاء الحساب بنجاح ✨');
+          setTimeout(()=> showLoggedState(u), 800);
+        }else{
+          const q = query(collection(db,"RANOSHA_USERS"), where("email","==",email), where("password","==",pass));
+          const snap = await getDocs(q);
+          if(snap.empty){ showMsg('الإيميل أو الباسورد غلط'); resetBtn(); return; }
+          let u=null; let uid=null;
+          snap.forEach(d=> { u=d.data(); uid=d.id; });
+          currentUserId = uid;
+          localStorage.setItem('ranosha-current-user', JSON.stringify(u));
+          showSuccess('تم الدخول بنجاح 💖');
+          setTimeout(()=> showLoggedState(u), 800);
+        }
+      }catch(e){ showMsg('حصل خطأ: '+e.message); resetBtn(); }
+    }
+
+    async function doAdminLogin(){
+      const email = adminEmailEl.value.trim();
+      const pass = adminPassEl.value.trim();
+      if(!email || !pass){ showMsg('اكتبي إيميل وباسورد الادمن'); return; }
+      adminBtn.innerText='جاري الدخول...'; adminBtn.disabled=true;
+      try{
+        await signInWithEmailAndPassword(auth, email, pass);
+        localStorage.setItem('ranosha-admin','true');
+        localStorage.setItem('ranosha-admin-time', Date.now());
+        localStorage.setItem('ranosha-current-user', JSON.stringify({name:'Admin Ranosha', email, role:'admin'}));
+        window.location.href='admin.html';
+      }catch(e){
+        showMsg('إيميل أو باسورد الادمن غلط');
+        adminBtn.innerText='دخول للوحة التحكم 🚀'; adminBtn.disabled=false;
+        setTimeout(()=>msg.classList.add('hidden'),2500);
+      }
+    }
+
+    window.logoutUser = () => {
+      localStorage.removeItem('ranosha-current-user');
+      localStorage.removeItem('ranosha-cart-' + (currentUserData?.email?.toLowerCase() || ''));
+      location.reload();
+    };
+
+    // === حذف الحساب ===
+    window.openDeleteModal = () => {
+      document.getElementById('deleteModal').classList.remove('hidden');
+      document.getElementById('deleteModal').classList.add('flex');
+    };
+    window.closeDeleteModal = () => {
+      document.getElementById('deleteModal').classList.add('hidden');
+      document.getElementById('deleteModal').classList.remove('flex');
+      document.getElementById('del-pass').value='';
+      document.getElementById('del-msg').innerText='';
+    };
+
+    document.getElementById('confirmDelBtn').onclick = async () => {
+      const pass = document.getElementById('del-pass').value;
+      const delMsg = document.getElementById('del-msg');
+      const btn = document.getElementById('confirmDelBtn');
+      if (!pass) { delMsg.innerText='اكتبي الباسورد'; delMsg.className='text-[11px] mt-3 font-bold text-red-500'; return; }
+      if (pass !== currentUserData?.password) {
+        delMsg.innerText='الباسورد غلط ❌'; delMsg.className='text-[11px] mt-3 font-bold text-red-500'; return;
+      }
+      btn.innerText='جاري الحذف...'; btn.disabled=true;
+      try {
+        if (currentUserId) {
+          await deleteDoc(doc(db, "RANOSHA_USERS", currentUserId));
+        } else {
+          // لو مش لاقي الـ ID، دور عليه تاني
+          const q = query(collection(db,"RANOSHA_USERS"), where("email","==",currentUserData.email));
+          const snap = await getDocs(q);
+          for (const d of snap.docs) { await deleteDoc(doc(db, "RANOSHA_USERS", d.id)); }
+        }
+        localStorage.removeItem('ranosha-current-user');
+        localStorage.removeItem('ranosha-cart-' + currentUserData.email.toLowerCase());
+        localStorage.removeItem('ranosha-cart');
+        delMsg.innerText='✅ تم حذف حسابك نهائياً';
+        delMsg.className='text-[11px] mt-3 font-bold text-green-600';
+        setTimeout(()=> location.href='index.html', 1500);
+      } catch (e) {
+        delMsg.innerText='فشل الحذف: ' + e.message;
+        delMsg.className='text-[11px] mt-3 font-bold text-red-500';
+        btn.innerText='ايوه امسحيه 🗑️'; btn.disabled=false;
+      }
+    };
+
+    function showMsg(t){ msg.innerText=t; msg.classList.remove('hidden'); success.classList.add('hidden'); }
+    function showSuccess(t){ success.innerText=t; success.classList.remove('hidden'); msg.classList.add('hidden'); }
+    function resetBtn(){ userBtn.innerText = currentTab==='register' ? 'إنشاء حساب ✨' : 'دخول 🚀'; userBtn.disabled=false; }
+    adminBtn.addEventListener('click', doAdminLogin);
+    adminPassEl.addEventListener('keypress', (e)=>{ if(e.key==='Enter') doAdminLogin(); });
+    passEl.addEventListener('keypress', (e)=>{ if(e.key==='Enter') handleUser(); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المفضلة - Ranosha</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&display=swap" rel="stylesheet">
+<style>body{font-family:'Cairo',sans-serif;background:#fff8f9}</style>
+</head>
+<body class="min-h-screen flex flex-col">
+<nav class="flex justify-between items-center px-4 py-3 bg-white shadow-sm sticky top-0 z-50">
+  <a href="index.html" class="font-extrabold text-[18px]" style="text-decoration:none;color:#000;">Ranosha<span class="text-pink-500">.</span></a>
+  <a href="index.html" class="text-[11px] bg-black text-white px-4 py-2 rounded-full font-bold" style="text-decoration:none;">رجوع للمتجر</a>
+</nav>
+<div class="flex-1 flex flex-col">
+  <h2 class="font-extrabold text-center text-[20px] mt-8">مفضلتي ❤️</h2>
+  <div id="wish-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 max-w-[1000px] mx-auto w-full"></div>
+  <div id="empty-msg" class="hidden flex-1 flex flex-col items-center justify-center text-center px-4 -mt-10">
+    <div class="text-[60px]">💔</div>
+    <p class="text-gray-400 font-bold text-[16px] mt-3">مفضلتك فاضية</p>
+    <a href="index.html" class="mt-6 bg-black text-white px-8 py-3 rounded-full font-bold text-[13px]" style="text-decoration:none;">روحي تسوقي 🛍️</a>
+  </div>
+</div>
+
+<script type="module">
+import { db, collection, getDocs, doc, getDoc, setDoc, serverTimestamp } from './firebase.js';
+
+let all=[];
+function getUser(){ try{return JSON.parse(localStorage.getItem('ranosha-current-user')||'null')}catch{return null} }
+function getWishKey(){ const u=getUser(); return u&&u.email ? 'ranosha-wish-'+u.email.toLowerCase() : 'ranosha-wish-guest'; }
+function getWish(){ return JSON.parse(localStorage.getItem(getWishKey())||'[]'); }
+
+async function syncFromFirebase(){
+  const u = getUser();
+  if(!u || !u.email) return;
+  try{
+    const ref = doc(db, "RANOSHA_WISHLIST", u.email.toLowerCase());
+    const snap = await getDoc(ref);
+    if(snap.exists()){
+      const data = snap.data();
+      if(data.items && Array.isArray(data.items)){
+        localStorage.setItem(getWishKey(), JSON.stringify(data.items));
+      }
+    }
+  }catch(e){ console.log(e) }
+}
+
+async function syncToFirebase(items){
+  const u = getUser();
+  if(!u || !u.email) return;
+  try{
+    const ref = doc(db, "RANOSHA_WISHLIST", u.email.toLowerCase());
+    await setDoc(ref, { email: u.email.toLowerCase(), items: items, updatedAt: serverTimestamp() }, { merge: true });
+  }catch(e){ console.log(e) }
+}
+
+async function load(){
+  await syncFromFirebase();
+  const snap=await getDocs(collection(db,"products"));
+  snap.forEach(d=>all.push({fid:d.id,...d.data()}));
+  render();
+}
+
+function render(){
+  const wish=getWish();
+  const grid=document.getElementById('wish-grid');
+  const empty=document.getElementById('empty-msg');
+  if(wish.length==0){
+    grid.classList.add('hidden'); empty.classList.remove('hidden'); empty.classList.add('flex'); return;
+  }
+  grid.classList.remove('hidden'); empty.classList.add('hidden'); empty.classList.remove('flex');
+  const prods=all.filter(p=>wish.includes(p.fid));
+  grid.innerHTML=prods.map(p=>`<div class="bg-white rounded-[18px] p-2 shadow-sm relative"><button onclick="removeWish('${p.fid}')" class="absolute top-2 left-2 bg-red-500 text-white w-6 h-6 rounded-full text-[11px] z-10">✕</button><img src="${p.image}" class="w-full h-[130px] object-contain bg-[#fff8f9] rounded-xl"><p class="text-[11px] font-bold mt-2 h-[32px] overflow-hidden">${p.name}</p><p class="text-pink-600 font-extrabold text-[12px] mt-1">${p.price} جنيه</p><button onclick="location.href='product.html?id=${p.fid}'" class="w-full bg-black text-white py-2 rounded-full text-[11px] mt-2">شوفي المنتج</button></div>`).join('');
+}
+
+window.removeWish= async (fid)=>{
+  let w=getWish(); w=w.filter(id=>id!==fid);
+  localStorage.setItem(getWishKey(),JSON.stringify(w));
+  await syncToFirebase(w);
+  render();
+}
+load();
+</script>
+</body>
+</html>

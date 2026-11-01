@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة التحكم - Ranosha</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Cairo', sans-serif; background: #fff8f9; }
+    .tab-btn.active { background: #111 !important; color: #fff !important; }
+    .stat-card { background: #fff; border-radius: 18px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; }
+    .admin-section.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <nav class="flex justify-between items-center px-4 py-3 bg-white sticky top-0 z-50 shadow-sm">
+    <h1 class="font-extrabold text-[14px]">لوحة التحكم 👑 Firebase</h1>
+    <div class="flex gap-2">
+      <a href="index.html" class="text-[12px] bg-pink-100 px-3 py-1.5 rounded-full font-bold" style="text-decoration:none;">المتجر</a>
+      <button onclick="logout()" class="text-[12px] bg-black text-white px-3 py-1.5 rounded-full font-bold">خروج 🚪</button>
+    </div>
+  </nav>
+
+  <div class="max-w-[700px] mx-auto p-3">
+    <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+      <button onclick="showTab('add')" id="tab-add" class="tab-btn active px-5 py-2.5 rounded-full bg-white text-[13px] font-bold shadow-sm whitespace-nowrap">إضافة منتج 📦</button>
+      <button onclick="showTab('orders')" id="tab-orders" class="tab-btn px-5 py-2.5 rounded-full bg-white text-[13px] font-bold shadow-sm whitespace-nowrap">الطلبات 📦 <span id="orders-count" class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full hidden">0</span></button>
+      <button onclick="showTab('coupons')" id="tab-coupons" class="tab-btn px-5 py-2.5 rounded-full bg-white text-[13px] font-bold shadow-sm whitespace-nowrap">الأكواد 🎟️</button>
+      <button onclick="showTab('stats')" id="tab-stats" class="tab-btn px-5 py-2.5 rounded-full bg-white text-[13px] font-bold shadow-sm whitespace-nowrap">الإحصائيات 📊</button>
+      <button onclick="showTab('list')" id="tab-list" class="tab-btn px-5 py-2.5 rounded-full bg-white text-[13px] font-bold shadow-sm whitespace-nowrap">المنتجات 📋</button>
+    </div>
+
+    <div id="section-add" class="admin-section">
+      <div class="bg-white rounded-[22px] p-4 shadow-sm">
+        <h3 class="font-extrabold mb-3 text-[14px]">إضافة منتج جديد ✨</h3>
+        <input id="name" placeholder="اسم المنتج" class="w-full border rounded-xl px-3 py-2.5 text-sm mb-2 outline-none focus:border-pink-400" />
+        <div class="flex gap-2">
+          <input id="price" type="number" placeholder="السعر الحالي بعد الخصم" class="flex-1 border rounded-xl px-3 py-2.5 text-sm mb-2 outline-none" />
+          <input id="oldPrice" type="number" placeholder="السعر قبل الخصم (اختياري)" class="flex-1 border rounded-xl px-3 py-2.5 text-sm mb-2 outline-none" />
+        </div>
+        <select id="cat" class="w-full border rounded-xl px-3 py-2.5 text-sm mb-2 outline-none">
+          <option value="bundles">🎁 باكدجات وعروض</option>
+          <option value="accessories">💍 إكسسوارات</option>
+          <option value="bags">👜 شنط</option>
+          <option value="perfume">🌸 عطور</option>
+          <option value="hair">💆‍♀️ عناية بالشعر</option>
+          <option value="skincare">🧴 عناية بالبشرة</option>
+          <option value="makeup">💄 ميكب</option>
+        </select>
+        <!-- رفع الصور من الهاتف -->
+        <div class="bg-[#fff8f9] rounded-xl p-3 mb-3">
+          <label class="text-[12px] font-bold flex items-center gap-1 mb-2">📷 صور المنتج - اختاري من الهاتف <span class="text-[10px] text-gray-400">(أو الصقي لينك)</span></label>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-white rounded-xl p-2 border">
+              <label class="text-[10px] font-bold text-pink-600">الصورة 1 - الأساسية ⭐</label>
+              <input type="file" id="file1" accept="image/*" class="hidden" onchange="uploadImageFile(this, 1)">
+              <button type="button" onclick="document.getElementById('file1').click()" class="w-full mt-1 bg-black text-white py-2 rounded-full text-[11px] font-bold">📱 اختاري صورة</button>
+              <div id="preview1" class="mt-1 hidden"><img id="prev-img1" class="w-full h-[80px] object-contain rounded-lg bg-gray-50"><p id="progress1" class="text-[10px] text-center text-pink-600 mt-1"></p></div>
+              <input id="img1" placeholder="أو الصقي رابط الصورة هنا" class="w-full border rounded-xl px-2 py-1.5 text-[11px] mt-1" />
+            </div>
+            <div class="bg-white rounded-xl p-2 border">
+              <label class="text-[10px] font-bold">الصورة 2</label>
+              <input type="file" id="file2" accept="image/*" class="hidden" onchange="uploadImageFile(this, 2)">
+              <button type="button" onclick="document.getElementById('file2').click()" class="w-full mt-1 bg-gray-100 text-black py-2 rounded-full text-[11px] font-bold">📱 اختاري صورة</button>
+              <div id="preview2" class="mt-1 hidden"><img id="prev-img2" class="w-full h-[80px] object-contain rounded-lg bg-gray-50"><p id="progress2" class="text-[10px] text-center text-pink-600 mt-1"></p></div>
+              <input id="img2" placeholder="أو رابط" class="w-full border rounded-xl px-2 py-1.5 text-[11px] mt-1" />
+            </div>
+            <div class="bg-white rounded-xl p-2 border">
+              <label class="text-[10px] font-bold">الصورة 3</label>
+              <input type="file" id="file3" accept="image/*" class="hidden" onchange="uploadImageFile(this, 3)">
+              <button type="button" onclick="document.getElementById('file3').click()" class="w-full mt-1 bg-gray-100 text-black py-2 rounded-full text-[11px] font-bold">📱 اختاري صورة</button>
+              <div id="preview3" class="mt-1 hidden"><img id="prev-img3" class="w-full h-[80px] object-contain rounded-lg bg-gray-50"><p id="progress3" class="text-[10px] text-center text-pink-600 mt-1"></p></div>
+              <input id="img3" placeholder="أو رابط" class="w-full border rounded-xl px-2 py-1.5 text-[11px] mt-1" />
+            </div>
+            <div class="bg-white rounded-xl p-2 border">
+              <label class="text-[10px] font-bold">الصورة 4</label>
+              <input type="file" id="file4" accept="image/*" class="hidden" onchange="uploadImageFile(this, 4)">
+              <button type="button" onclick="document.getElementById('file4').click()" class="w-full mt-1 bg-gray-100 text-black py-2 rounded-full text-[11px] font-bold">📱 اختاري صورة</button>
+              <div id="preview4" class="mt-1 hidden"><img id="prev-img4" class="w-full h-[80px] object-contain rounded-lg bg-gray-50"><p id="progress4" class="text-[10px] text-center text-pink-600 mt-1"></p></div>
+              <input id="img4" placeholder="أو رابط" class="w-full border rounded-xl px-2 py-1.5 text-[11px] mt-1" />
+            </div>
+            <div class="bg-white rounded-xl p-2 border">
+              <label class="text-[10px] font-bold">الصورة 5</label>
+              <input type="file" id="file5" accept="image/*" class="hidden" onchange="uploadImageFile(this, 5)">
+              <button type="button" onclick="document.getElementById('file5').click()" class="w-full mt-1 bg-gray-100 text-black py-2 rounded-full text-[11px] font-bold">📱 اختاري صورة</button>
+              <div id="preview5" class="mt-1 hidden"><img id="prev-img5" class="w-full h-[80px] object-contain rounded-lg bg-gray-50"><p id="progress5" class="text-[10px] text-center text-pink-600 mt-1"></p></div>
+              <input id="img5" placeholder="أو رابط" class="w-full border rounded-xl px-2 py-1.5 text-[11px] mt-1" />
+            </div>
+            <div class="bg-white rounded-xl p-2 border">
+              <label class="text-[10px] font-bold">الصورة 6</label>
+              <input type="file" id="file6" accept="image/*" class="hidden" onchange="uploadImageFile(this, 6)">
+              <button type="button" onclick="document.getElementById('file6').click()" class="w-full mt-1 bg-gray-100 text-black py-2 rounded-full text-[11px] font-bold">📱 اختاري صورة</button>
+              <div id="preview6" class="mt-1 hidden"><img id="prev-img6" class="w-full h-[80px] object-contain rounded-lg bg-gray-50"><p id="progress6" class="text-[10px] text-center text-pink-600 mt-1"></p></div>
+              <input id="img6" placeholder="أو رابط" class="w-full border rounded-xl px-2 py-1.5 text-[11px] mt-1" />
+            </div>
+          </div>
+          <p class="text-[10px] text-gray-400 mt-2 text-center">💡 تقدري ترفعي من الهاتف أو تلصقي رابط، الاتنين شغالين</p>
+        </div>
+        <textarea id="desc" placeholder="الوصف" class="w-full border rounded-xl px-3 py-2.5 text-sm mb-2 h-[70px]"></textarea>
+        <div class="mb-3">
+          <label class="text-[11px] font-bold text-gray-700 mr-1 flex items-center gap-1">📦 الكمية المتاحة في المخزن <span class="text-[10px] text-gray-400 font-normal">(اكتبي 0 لو نفذت الكمية)</span></label>
+          <input id="stock" type="number" placeholder="مثال: 10 قطع" class="w-full border rounded-xl px-3 py-2.5 text-sm mt-1 outline-none focus:border-pink-400" value="10" />
+        </div>
+        <div class="flex gap-2 mb-2">
+          <div class="flex-1">
+            <label class="text-[11px] font-bold text-gray-700 mr-1">⭐ التقييم (من 5)</label>
+            <input id="rating" type="number" step="0.1" value="4.8" placeholder="4.8" class="w-full border rounded-xl px-3 py-2.5 text-sm mt-1 outline-none focus:border-pink-400" />
+          </div>
+          <div class="flex-1">
+            <label class="text-[11px] font-bold text-gray-700 mr-1">💬 عدد المراجعات</label>
+            <input id="reviews" type="number" value="120" placeholder="120" class="w-full border rounded-xl px-3 py-2.5 text-sm mt-1 outline-none focus:border-pink-400" />
+          </div>
+        </div>
+        <div class="flex gap-2">
+          
+        </div>
+        <button id="saveBtn" class="w-full bg-black text-white py-3 rounded-full font-bold mt-4 text-[14px]">حفظ المنتج ✅</button>
+        <p id="status" class="text-center text-xs mt-2 text-green-600 font-bold"></p>
+      </div>
+    </div>
+
+    <div id="section-orders" class="admin-section hidden">
+      <div class="bg-white rounded-[22px] p-4 shadow-sm">
+        <h3 class="font-extrabold mb-3 text-[14px]">الطلبات 📦 - تتبع العملاء</h3>
+        <p class="text-[11px] text-gray-400 mb-3">دوسي على تأكيد - شحن - وصل عشان حالة الطلب تتغير عند العميل</p>
+        <div id="orders-list" class="space-y-3 text-[12px]">جاري تحميل الطلبات...</div>
+      </div>
+    </div>
+
+    <div id="section-coupons" class="admin-section hidden">
+      <div class="bg-white rounded-[22px] p-4 shadow-sm">
+        <h3 class="font-extrabold mb-3 text-[14px]">إضافة كوبون خصم جديد 🎟️</h3>
+        <input id="coupon-code" placeholder="كود الخصم مثلا RANOSHA10" class="w-full border rounded-xl px-3 py-2.5 text-sm mb-2 outline-none uppercase" />
+        <div class="flex gap-2">
+          <input id="coupon-discount" type="number" placeholder="نسبة الخصم % مثلا 10" class="flex-1 border rounded-xl px-3 py-2.5 text-sm mb-2 outline-none" />
+          <input id="coupon-min" type="number" placeholder="أقل مبلغ للطلب (اختياري)" class="flex-1 border rounded-xl px-3 py-2.5 text-sm mb-2 outline-none" />
+        </div>
+        <div class="flex items-center gap-2 mb-3">
+          <input type="checkbox" id="coupon-active" checked class="w-4 h-4" />
+          <label for="coupon-active" class="text-[12px] font-bold">الكوبون شغال ✅</label>
+        </div>
+        <button id="saveCouponBtn" class="w-full bg-gradient-to-r from-pink-500 to-pink-600 text-white py-3 rounded-full font-bold text-[14px]">حفظ الكوبون 🎟️</button>
+        <p id="coupon-status" class="text-center text-xs mt-2 font-bold"></p>
+      </div>
+      <div class="bg-white rounded-[22px] p-4 mt-4 shadow-sm">
+        <h3 class="font-bold text-[13px] mb-3">الأكواد الحالية 📋</h3>
+        <div id="coupons-list" class="text-[12px]">جاري التحميل...</div>
+      </div>
+    </div>
+
+    <div id="section-stats" class="admin-section hidden">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="stat-card"><p class="text-[11px] text-gray-500">إجمالي المنتجات</p><h2 id="st-products" class="text-[22px] font-extrabold">0</h2></div>
+        <div class="stat-card"><p class="text-[11px] text-gray-500">إجمالي التقييمات</p><h2 id="st-reviews" class="text-[22px] font-extrabold">0</h2></div>
+        <div class="stat-card"><p class="text-[11px] text-gray-500">مشاهدات اليوم</p><h2 id="st-today" class="text-[22px] font-extrabold text-pink-600">0</h2></div>
+        <div class="stat-card"><p class="text-[11px] text-gray-500">إجمالي المشاهدات</p><h2 id="st-all" class="text-[22px] font-extrabold">0</h2></div>
+      </div>
+      <div class="bg-white rounded-[22px] p-4 mt-4 shadow-sm">
+        <h3 class="font-bold text-[13px] mb-2">المشاهدات حسب اليوم 📅</h3>
+        <div id="stats-list" class="text-[12px]">جاري التحميل...</div>
+      </div>
+    </div>
+
+    <div id="section-list" class="admin-section hidden">
+      <div id="list" class="mt-1">جاري تحميل المنتجات...</div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="fixed inset-0 bg-black/60 z-[9999] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-[22px] p-6 w-full max-w-[350px] text-center">
+      <div class="text-[40px] mb-2">⚠️</div>
+      <h3 class="font-extrabold text-[16px]">تأكيد الحذف</h3>
+      <p class="text-[13px] text-gray-600 mt-3">هل انتي متأكدة عايزة تحذفي المنتج ده؟</p>
+      <div id="confirmName" class="bg-[#fff8f9] p-3 rounded-xl mt-3 font-bold text-[13px] text-pink-600"></div>
+      <div class="flex gap-2 mt-5">
+        <button onclick="closeConfirm()" class="flex-1 bg-gray-100 py-3 rounded-full font-bold text-[13px]">إلغاء</button>
+        <button id="confirmDeleteBtn" class="flex-1 bg-red-500 text-white py-3 rounded-full font-bold text-[13px]">ايوه احذفيه 🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, auth, collection, getDocs, addDoc, deleteDoc, doc, setDoc, signOut, onAuthStateChanged, serverTimestamp, query, orderBy, updateDoc } from './firebase.js';
+    onAuthStateChanged(auth, (user) => { if (!user) location.href = 'login.html'; });
+    let allProducts = []; let toDeleteId = null; let editingId = null;
+    window.showTab = (name) => {
+      document.querySelectorAll('.admin-section').forEach(s => s.classList.add('hidden'));
+      document.getElementById('section-' + name).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      if (name === 'stats') loadStats();
+      if (name === 'list') renderList();
+      if (name === 'coupons') loadCoupons();
+      if (name === 'orders') loadOrders();
+    };
+
+    async function loadOrders() {
+      const listEl = document.getElementById('orders-list');
+      const countEl = document.getElementById('orders-count');
+      listEl.innerHTML = 'جاري تحميل الطلبات...';
+      try {
+        const snap = await getDocs(query(collection(db, "RANOSHA_ORDERS"), orderBy("createdAt", "desc")));
+        let orders = []; snap.forEach(d => orders.push({ id: d.id, ...d.data() }));
+        let pendingCount = orders.filter(o => o.status === 'pending').length;
+        if (pendingCount > 0) { countEl.innerText = pendingCount; countEl.classList.remove('hidden'); } else { countEl.classList.add('hidden'); }
+        if (orders.length === 0) { listEl.innerHTML = '<p class="text-center text-gray-400 py-6">مفيش طلبات لسه 🥺</p>'; return; }
+        listEl.innerHTML = orders.map(o => {
+          const statusColors = { pending: '#f59e0b', confirmed: '#3b82f6', shipped: '#8b5cf6', delivered: '#22c55e', cancelled: '#ef4444' };
+          const statusLabels = { pending: 'قيد المراجعة', confirmed: 'تم التأكيد', shipped: 'تم الشحن 🚚', delivered: 'تم التوصيل ✅', cancelled: 'ملغي' };
+          let dateStr = ''; if (o.createdAt?.seconds) dateStr = new Date(o.createdAt.seconds * 1000).toLocaleDateString('ar-EG');
+          return `
+            <div class="border rounded-xl p-3">
+              <div class="flex justify-between items-start gap-2">
+                <div class="flex-1">
+                  <p class="font-extrabold text-[13px]">#${o.id.slice(0,8).toUpperCase()} <span class="text-[10px] text-gray-400">${dateStr}</span></p>
+                  <p class="text-[12px] mt-1">👤 ${o.name || 'بدون اسم'} - 📞 <span class="font-bold">${o.phone}</span></p>
+                  <p class="text-[11px] text-gray-500">📍 ${o.address || ''}</p>
+                  ${o.email ? `<p class="text-[10px] text-gray-400">📧 ${o.email}</p>` : ''}
+                  <p class="text-[12px] font-bold text-pink-600 mt-1">${o.total || 0} جنيه - ${o.qty || (o.items?.length || 0)} قطعة ${o.coupon ? ` - 🎟️ ${o.coupon}` : ''}</p>
+                </div>
+                <span class="text-[10px] px-3 py-1 rounded-full text-white font-bold whitespace-nowrap" style="background:${statusColors[o.status] || '#999'}">${statusLabels[o.status] || o.status}</span>
+              </div>
+              <div class="bg-[#fff8f9] rounded-lg p-2 mt-2 text-[11px]">
+                ${(o.items || []).map(p => `<div class="flex justify-between"><span>${p.name} x${p.qty}</span><span class="font-bold">${(p.price * p.qty)} ج</span></div>`).join('')}
+              </div>
+              <div class="grid grid-cols-4 gap-2 mt-3">
+                <button onclick="updateOrderStatus('${o.id}','confirmed')" class="bg-blue-500 text-white py-2 rounded-full text-[11px] font-bold">تأكيد ✅</button>
+                <button onclick="updateOrderStatus('${o.id}','shipped')" class="bg-purple-500 text-white py-2 rounded-full text-[11px] font-bold">شحن 🚚</button>
+                <button onclick="updateOrderStatus('${o.id}','delivered')" class="bg-green-500 text-white py-2 rounded-full text-[11px] font-bold">وصل ✅</button>
+                <button onclick="updateOrderStatus('${o.id}','cancelled')" class="bg-red-50 text-red-500 py-2 rounded-full text-[11px] font-bold">إلغاء ❌</button>
+              </div>
+              <a href="https://wa.me/2${(o.phone||'').replace(/\D/g,'').slice(-11)}?text=أهلا ${o.name} طلبك ${o.id.slice(0,8)} حالته: ${statusLabels[o.status]||o.status} من Ranosha Store 👑" target="_blank" class="block text-center bg-[#22c55e] text-white py-2.5 rounded-full text-[12px] mt-2 font-bold" style="text-decoration:none;">كلمي العميلة واتساب 💬</a>
+              <button onclick="deleteOrder('${o.id}')" class="w-full bg-red-50 text-red-500 border border-red-100 py-2.5 rounded-full text-[11px] font-bold mt-2">حذف الطلب نهائيا 🗑️</button>
+            </div>`;
+        }).join('');
+      } catch(e) { listEl.innerHTML = `<p class="text-red-500">خطأ: ${e.message}</p>`; }
+    }
+
+    window.updateOrderStatus = async (orderId, newStatus) => {
+      try { await updateDoc(doc(db, "RANOSHA_ORDERS", orderId), { status: newStatus }); loadOrders(); } catch(e) { alert('خطأ: ' + e.message) }
+    };
+
+    window.deleteOrder = async (orderId) => {
+      if (!confirm('متأكدة عايزة تحذفي الطلب ده نهائيا؟ 🗑️\nالعملية دي مبتتعكسش')) return;
+      try {
+        await deleteDoc(doc(db, "RANOSHA_ORDERS", orderId));
+        alert('✅ تم حذف الطلب');
+        loadOrders();
+      } catch(e) { alert('خطأ: ' + e.message); }
+    };
+
+    async function loadProducts() {
+      const snap = await getDocs(collection(db, "products"));
+      allProducts = []; snap.forEach(d => allProducts.push({ firebaseId: d.id, ...d.data() }));
+      allProducts.sort((a,b) => (b.created||0) - (a.created||0));
+      renderList(); document.getElementById('st-products').innerText = allProducts.length; loadOrdersCount();
+    }
+    async function loadOrdersCount() {
+      try {
+        const snap = await getDocs(collection(db, "RANOSHA_ORDERS"));
+        let pending = 0; snap.forEach(d => { if (d.data().status === 'pending') pending++; });
+        const countEl = document.getElementById('orders-count');
+        if (pending > 0) { countEl.innerText = pending; countEl.classList.remove('hidden'); }
+      } catch {}
+    }
+    function renderList() {
+      if (allProducts.length == 0) { document.getElementById('list').innerHTML = '<p class="text-center text-sm mt-4 bg-white p-4 rounded-xl">مفيش منتجات</p>'; return; }
+      document.getElementById('list').innerHTML = allProducts.map(p => `
+        <div class="bg-white rounded-xl p-2 flex gap-2 items-center mb-2 shadow-sm">
+          <img src="${p.image || p.images?.[0]}" class="w-[50px] h-[50px] object-contain bg-[#fff8f9] rounded-lg">
+          <div class="flex-1">
+            <p class="text-[11px] font-bold line-clamp-1">${p.name}</p>
+            <p class="text-[10px] text-pink-600">${p.price} جنيه - ${p.category} - ${p.stock!==undefined? p.stock+' قطعة' : 'متوفر'}</p>
+          </div>
+          <div class="flex gap-1">
+            <button onclick="window.editProduct('${p.firebaseId}')" class="text-[11px] bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full font-bold">تعديل ✏️</button>
+            <button onclick="window.askDelete('${p.firebaseId}')" class="text-[11px] bg-red-50 text-red-500 px-3 py-1.5 rounded-full font-bold">حذف</button>
+          </div>
+        </div>`).join('');
+    }
+    async function loadStats() {
+      const listEl = document.getElementById('stats-list');
+      try {
+        const snap = await getDocs(collection(db, "RANOSHA_STATS")); let all = 0; let list = [];
+        snap.forEach(d => { let data = d.data(); all += (data.views || 0); list.push({ id: d.id, views: data.views || 0 }); });
+        list.sort((a, b) => b.id.localeCompare(a.id)); document.getElementById('st-all').innerText = all;
+        let today = new Date().toISOString().split('T')[0]; let todayDoc = list.find(l => l.id === today);
+        document.getElementById('st-today').innerText = todayDoc ? todayDoc.views : 0;
+        if (list.length === 0) { listEl.innerHTML = '<p class="text-center text-gray-400 py-3">لسه مفيش مشاهدات</p>'; }
+        else { listEl.innerHTML = list.map(l => `<div class="flex justify-between py-2 border-b text-[12px]"><span>${l.id}</span><span class="font-bold">${l.views} مشاهدة</span></div>`).join(''); }
+        try { const revSnap = await getDocs(collection(db, "reviews")); document.getElementById('st-reviews').innerText = revSnap.size; } catch { document.getElementById('st-reviews').innerText = '0'; }
+      } catch (e) { listEl.innerHTML = `<p class="text-red-500 text-center p-3">خطأ: ${e.message}</p>`; }
+    }
+    async function loadCoupons() {
+      const container = document.getElementById('coupons-list'); container.innerHTML = 'جاري التحميل...';
+      try {
+        const snap = await getDocs(collection(db, "RANOSHA_COUPONS"));
+        if (snap.empty) { container.innerHTML = '<p class="text-center text-gray-400 py-4">مفيش أكواد لسه ✨</p>'; return; }
+        let html = ''; snap.forEach(d => {
+          const data = d.data();
+          html += `<div class="flex justify-between items-center py-2.5 border-b gap-2"><div class="flex-1"><span class="font-extrabold text-pink-600 text-[13px]">${d.id}</span><span class="mr-2 text-[11px] bg-black text-white px-2 py-0.5 rounded-full">${data.discount}% خصم</span><div class="text-[10px] text-gray-500 mt-1">أقل مبلغ: ${data.minAmount||0} - ${data.active!==false?'✅ شغال':'❌ موقوف'}</div></div><div class="flex gap-1"><button onclick="toggleCoupon('${d.id}', ${data.active!==false})" class="text-[10px] ${data.active!==false?'bg-orange-100 text-orange-600':'bg-green-100 text-green-600'} px-2.5 py-1.5 rounded-full font-bold">${data.active!==false?'إيقاف':'تفعيل'}</button><button onclick="deleteCoupon('${d.id}')" class="text-[10px] bg-red-50 text-red-500 px-2.5 py-1.5 rounded-full font-bold">حذف</button></div></div>`;
+        }); container.innerHTML = html;
+      } catch(e) { container.innerHTML = 'خطأ: '+e.message; }
+    }
+    window.toggleCoupon = async (code, currentActive) => { await setDoc(doc(db,"RANOSHA_COUPONS",code), { active: !currentActive }, { merge:true }); loadCoupons(); }
+    window.deleteCoupon = async (code) => { if(!confirm('تحذفي كود '+code+' ؟')) return; await deleteDoc(doc(db,"RANOSHA_COUPONS",code)); loadCoupons(); }
+    document.getElementById('saveCouponBtn').onclick = async () => {
+      let code = document.getElementById('coupon-code').value.trim().toUpperCase(); let discount = Number(document.getElementById('coupon-discount').value); let minAmount = Number(document.getElementById('coupon-min').value)||0; let active = document.getElementById('coupon-active').checked;
+      if(!code || !discount) return alert('اكتبي الكود والخصم'); const btn = document.getElementById('saveCouponBtn'); btn.innerText = 'جاري الحفظ...'; btn.disabled = true;
+      await setDoc(doc(db,"RANOSHA_COUPONS",code), { code, discount, minAmount, active, createdAt: serverTimestamp() }, { merge:true });
+      document.getElementById('coupon-status').innerText = '✅ تم حفظ '+code; btn.innerText = 'حفظ الكوبون 🎟️'; btn.disabled = false; document.getElementById('coupon-code').value=''; document.getElementById('coupon-discount').value=''; loadCoupons();
+    };
+
+    window.uploadImageFile = async (input, num) => {
+      const file = input.files[0];
+      if(!file) return;
+      const previewDiv = document.getElementById('preview'+num);
+      const prevImg = document.getElementById('prev-img'+num);
+      const progress = document.getElementById('progress'+num);
+      const urlInput = document.getElementById('img'+num);
+      progress.innerText = '⏳ جاري ضغط الصورة...';
+      progress.className = 'text-[10px] text-center text-pink-600 mt-1 font-bold';
+      try{
+        const compressedBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              let width = img.width;
+              let height = img.height;
+              const maxSize = 800;
+              if(width > height){
+                if(width > maxSize){ height *= maxSize / width; width = maxSize; }
+              } else {
+                if(height > maxSize){ width *= maxSize / height; height = maxSize; }
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        prevImg.src = compressedBase64;
+        previewDiv.classList.remove('hidden');
+        urlInput.value = compressedBase64;
+        progress.innerText = '✅ تم ضغط الصورة وجاهزة للحفظ';
+        progress.className = 'text-[10px] text-center text-green-600 mt-1 font-bold';
+        setTimeout(()=>{ progress.innerText = ''; }, 2500);
+      }catch(e){
+        console.error(e);
+        progress.innerText = '❌ فشل: ' + e.message;
+        progress.className = 'text-[10px] text-center text-red-500 mt-1';
+      }
+    };
+
+    window.editProduct = (id) => {
+      const prod = allProducts.find(p => p.firebaseId == id);
+      if(!prod) return alert('المنتج مش موجود');
+      editingId = id;
+      document.getElementById('name').value = prod.name || '';
+      document.getElementById('price').value = prod.price || '';
+      document.getElementById('oldPrice').value = prod.oldPrice || '';
+      document.getElementById('cat').value = prod.category || 'bundles';
+      document.getElementById('desc').value = prod.desc || '';
+      document.getElementById('rating').value = prod.rating || 4.8;
+      document.getElementById('reviews').value = prod.reviews || 120;
+      if(document.getElementById('stock')) document.getElementById('stock').value = prod.stock !== undefined ? prod.stock : 10;
+      const imgs = prod.images || [prod.image];
+      for(let i=1;i<=6;i++){
+        const el = document.getElementById('img'+i);
+        if(el) el.value = imgs[i-1] || '';
+        const previewDiv = document.getElementById('preview'+i);
+        const prevImg = document.getElementById('prev-img'+i);
+        if(imgs[i-1] && previewDiv && prevImg){
+          prevImg.src = imgs[i-1];
+          previewDiv.classList.remove('hidden');
+        }
+      }
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.innerText = 'تعديل المنتج ✏️';
+      saveBtn.classList.remove('bg-black');
+      saveBtn.classList.add('bg-blue-600');
+      showTab('add');
+      window.scrollTo({top:0, behavior:'smooth'});
+      document.getElementById('status').innerText = '✏️ بتعدلي: ' + prod.name;
+      let cancelBtn = document.getElementById('cancelEditBtn');
+      if(!cancelBtn){
+        cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelEditBtn';
+        cancelBtn.className = 'w-full bg-gray-100 text-black py-2.5 rounded-full font-bold mt-2 text-[13px]';
+        cancelBtn.innerText = 'إلغاء التعديل ❌';
+        cancelBtn.onclick = window.cancelEdit;
+        saveBtn.after(cancelBtn);
+      }
+      cancelBtn.classList.remove('hidden');
+    };
+
+    window.cancelEdit = () => {
+      editingId = null;
+      document.getElementById('name').value = '';
+      document.getElementById('price').value = '';
+      document.getElementById('oldPrice').value = '';
+      document.getElementById('desc').value = '';
+      document.getElementById('rating').value = '4.8';
+      document.getElementById('reviews').value = '120';
+      if(document.getElementById('stock')) document.getElementById('stock').value = '10';
+      for(let i=1;i<=6;i++){ const el=document.getElementById('img'+i); if(el) el.value=''; const pd=document.getElementById('preview'+i); if(pd) pd.classList.add('hidden'); }
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.innerText = 'حفظ المنتج ✅';
+      saveBtn.classList.add('bg-black');
+      saveBtn.classList.remove('bg-blue-600');
+      document.getElementById('status').innerText = '';
+      const cancelBtn = document.getElementById('cancelEditBtn');
+      if(cancelBtn) cancelBtn.classList.add('hidden');
+    };
+
+    window.askDelete = (id) => { const prod = allProducts.find(p => p.firebaseId == id); toDeleteId = id; document.getElementById('confirmName').innerText = prod ? prod.name : ''; document.getElementById('confirmModal').classList.remove('hidden'); document.getElementById('confirmModal').classList.add('flex'); };
+    window.closeConfirm = () => { document.getElementById('confirmModal').classList.add('hidden'); document.getElementById('confirmModal').classList.remove('flex'); };
+    document.getElementById('confirmDeleteBtn').onclick = async () => { if (!toDeleteId) return; await deleteDoc(doc(db, "products", toDeleteId)); closeConfirm(); loadProducts(); };
+    document.getElementById('saveBtn').onclick = async () => {
+      const name = document.getElementById('name').value.trim(); 
+      const price = Number(document.getElementById('price').value); 
+      const oldPrice = Number(document.getElementById('oldPrice').value) || null; 
+      const cat = document.getElementById('cat').value; 
+      const desc = document.getElementById('desc').value; 
+      const rating = parseFloat(document.getElementById('rating').value) || 4.8; 
+      const reviews = Number(document.getElementById('reviews').value) || 0; 
+      const stockVal = document.getElementById('stock') ? Number(document.getElementById('stock').value) : 10; 
+      const stock = isNaN(stockVal) ? 10 : stockVal;
+      const imgs = [1,2,3,4,5,6].map(n=>document.getElementById('img'+n).value.trim()).filter(Boolean);
+      if (!name || !price || !imgs[0]) return alert('اكتبي الاسم والسعر وصورة'); 
+      let discount = null; 
+      if (oldPrice && oldPrice > price) discount = Math.round(((oldPrice - price) / oldPrice) * 100);
+      
+      const btn = document.getElementById('saveBtn');
+      const statusEl = document.getElementById('status');
+      btn.disabled = true;
+      
+      if(editingId){
+        btn.innerText = 'جاري التعديل...';
+        try{
+          await updateDoc(doc(db, "products", editingId), { name, price, oldPrice, discount, category: cat, desc, rating, reviews, stock, image: imgs[0], images: imgs });
+          statusEl.innerText = '✅ تم التعديل بنجاح: ' + name;
+          statusEl.className = 'text-center text-xs mt-2 text-green-600 font-bold';
+          editingId = null;
+          btn.innerText = 'حفظ المنتج ✅';
+          btn.classList.add('bg-black');
+          btn.classList.remove('bg-blue-600');
+          const cancelBtn = document.getElementById('cancelEditBtn');
+          if(cancelBtn) cancelBtn.classList.add('hidden');
+          document.getElementById('name').value=''; 
+          document.getElementById('price').value=''; 
+          document.getElementById('oldPrice').value=''; 
+          document.getElementById('desc').value='';
+          for(let i=1;i<=6;i++){ const el=document.getElementById('img'+i); if(el) el.value=''; const pd=document.getElementById('preview'+i); if(pd) pd.classList.add('hidden'); }
+          if(document.getElementById('stock')) document.getElementById('stock').value='10';
+          await loadProducts(); 
+          showTab('list');
+        }catch(e){ 
+          statusEl.innerText = '❌ خطأ: ' + e.message; 
+          statusEl.className='text-center text-xs mt-2 text-red-600 font-bold'; 
+        }
+        finally{ btn.disabled=false; }
+      } else {
+        btn.innerText = 'جاري الحفظ...';
+        try{
+          await addDoc(collection(db, "products"), { name, price, oldPrice, discount, category: cat, desc, rating, reviews, stock, image: imgs[0], images: imgs, created: Date.now() });
+          statusEl.innerText = '✅ تم الحفظ: ' + name;
+          statusEl.className = 'text-center text-xs mt-2 text-green-600 font-bold';
+          document.getElementById('name').value=''; 
+          document.getElementById('price').value=''; 
+          document.getElementById('oldPrice').value=''; 
+          document.getElementById('desc').value='';
+          for(let i=1;i<=6;i++){ const el=document.getElementById('img'+i); if(el) el.value=''; const pd=document.getElementById('preview'+i); if(pd) pd.classList.add('hidden'); }
+          if(document.getElementById('stock')) document.getElementById('stock').value='10';
+          await loadProducts(); 
+          showTab('list');
+        }catch(e){ 
+          statusEl.innerText = '❌ خطأ: ' + e.message; 
+          statusEl.className='text-center text-xs mt-2 text-red-600 font-bold'; 
+        }
+        finally{ btn.innerText='حفظ المنتج ✅'; btn.disabled=false; }
+      }
+    };
+    window.logout = async () => { await signOut(auth); localStorage.clear(); location.href = 'login.html'; };
+    loadProducts();
+  </script>
+</body>
+</html>
